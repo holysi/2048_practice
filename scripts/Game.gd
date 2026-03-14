@@ -186,3 +186,54 @@ func is_game_over() -> bool:
 			if row + 1 < BOARD_SIZE and board[row][col] == board[row + 1][col]:
 				return false
 	return true
+
+var _touch_start: Vector2 = Vector2.ZERO
+const SWIPE_THRESHOLD = 50.0
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		var direction = ""
+		match event.keycode:
+			KEY_UP, KEY_W:    direction = "up"
+			KEY_DOWN, KEY_S:  direction = "down"
+			KEY_LEFT, KEY_A:  direction = "left"
+			KEY_RIGHT, KEY_D: direction = "right"
+		if direction != "":
+			_try_move(direction)
+
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			_touch_start = event.position
+		else:
+			var delta = event.position - _touch_start
+			if delta.length() >= SWIPE_THRESHOLD:
+				var direction = ""
+				if abs(delta.x) > abs(delta.y):
+					direction = "right" if delta.x > 0 else "left"
+				else:
+					direction = "down" if delta.y > 0 else "up"
+				_try_move(direction)
+
+func _try_move(direction: String) -> void:
+	if move(direction):
+		_update_display()
+		if is_game_over():
+			_show_game_over()
+
+func _show_game_over() -> void:
+	var overlay = ColorRect.new()
+	overlay.name = "GameOverOverlay"
+	overlay.color = Color(0, 0, 0, 0.6)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+
+	var label = Label.new()
+	label.name = "GameOverLabel"
+	label.text = "遊戲結束！\n最終分數：" + str(score) + "\n按「重新開始」繼續"
+	label.horizontal_alignment = HorizontalAlignment.CENTER
+	label.vertical_alignment = VerticalAlignment.CENTER
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_font_size_override("font_size", 36)
+
+	$UI.add_child(overlay)
+	$UI.add_child(label)
