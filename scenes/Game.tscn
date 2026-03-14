@@ -91,7 +91,7 @@ anchor_bottom = 0.12
 [node name="TitleLabel" type="Label" parent="UI/TopBar"]
 layout_mode = 2
 text = "2048"
-add_theme_font_size_override = 48
+theme_override_font_sizes/font_size = 48
 horizontal_alignment = 1
 
 [node name="ScoreBox" type="VBoxContainer" parent="UI/TopBar"]

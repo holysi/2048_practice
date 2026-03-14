@@ -135,13 +135,14 @@ func _create_tile_nodes() -> void:
 		tile_nodes.append(row_nodes)
 
 func _update_display() -> void:
-	var cell_size: Vector2 = board_container.size / BOARD_SIZE
+	var board_rect: Rect2 = board_container.get_global_rect()
+	var cell_size: Vector2 = board_rect.size / BOARD_SIZE
 	for row in BOARD_SIZE:
 		for col in BOARD_SIZE:
 			var tile: Tile = tile_nodes[row][col]
 			tile.value = board[row][col]
 			tile.size = cell_size
-			tile.position = board_container.position + Vector2(col * cell_size.x, row * cell_size.y)
+			tile.position = board_rect.position + Vector2(col * cell_size.x, row * cell_size.y)
 	score_value.text = str(score)
 	undo_button.disabled = history.is_empty()
 
