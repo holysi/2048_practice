@@ -12,6 +12,7 @@ config_version=5
 
 config/name="2048"
 config/features=PackedStringArray("4.3", "Mobile")
+run/main_scene="res://scenes/Main.tscn"
 config/icon="res://icon.svg"
 
 [rendering]
