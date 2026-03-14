@@ -1,6 +1,16 @@
 # scripts/Game.gd
 extends Node2D
 
+@export var tile_theme: TileTheme
+@export var tile_scene: PackedScene
+
+@onready var tile_container: Node2D = $TileContainer
+@onready var score_value: Label = $UI/TopBar/ScoreBox/ScoreValue
+@onready var undo_button: Button = $UI/BottomBar/UndoButton
+@onready var board_container: AspectRatioContainer = $BoardContainer
+
+var tile_nodes: Array = []  # 2D Array，對應 board 位置
+
 const BOARD_SIZE = 4
 const MAX_HISTORY = 3
 
@@ -9,7 +19,13 @@ var score: int = 0
 var history: Array = []  # 每筆: {"board": Array, "score": int}
 
 func _ready() -> void:
-	restart()
+	_init_board()
+	_create_tile_nodes()
+	spawn_tile()
+	spawn_tile()
+	# 等待一個 frame 讓 layout 完成，確保 board_container.size 已計算
+	await get_tree().process_frame
+	_update_display()
 
 func _init_board() -> void:
 	board = []
@@ -106,6 +122,43 @@ func _copy_board(src: Array) -> Array:
 	for row in src:
 		copy.append(row.duplicate())
 	return copy
+
+func _create_tile_nodes() -> void:
+	tile_nodes = []
+	for row in BOARD_SIZE:
+		var row_nodes: Array = []
+		for col in BOARD_SIZE:
+			var tile: Tile = tile_scene.instantiate()
+			tile_container.add_child(tile)
+			tile.setup(tile_theme)
+			row_nodes.append(tile)
+		tile_nodes.append(row_nodes)
+
+func _update_display() -> void:
+	var cell_size: Vector2 = board_container.size / BOARD_SIZE
+	for row in BOARD_SIZE:
+		for col in BOARD_SIZE:
+			var tile: Tile = tile_nodes[row][col]
+			tile.value = board[row][col]
+			tile.size = cell_size
+			tile.position = board_container.position + Vector2(col * cell_size.x, row * cell_size.y)
+	score_value.text = str(score)
+	undo_button.disabled = history.is_empty()
+
+func _on_undo_pressed() -> void:
+	if undo():
+		_update_display()
+
+func _on_restart_pressed() -> void:
+	# 清除 game over 覆蓋層（如果存在）
+	var overlay = $UI.get_node_or_null("GameOverOverlay")
+	var label = $UI.get_node_or_null("GameOverLabel")
+	if overlay:
+		overlay.queue_free()
+	if label:
+		label.queue_free()
+	restart()
+	_update_display()
 
 func undo() -> bool:
 	if history.is_empty():
