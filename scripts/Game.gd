@@ -9,14 +9,15 @@ var score: int = 0
 var history: Array = []  # 每筆: {"board": Array, "score": int}
 
 func _ready() -> void:
-	_init_board()
-	spawn_tile()
-	spawn_tile()
+	restart()
 
 func _init_board() -> void:
 	board = []
 	for i in BOARD_SIZE:
-		board.append([0, 0, 0, 0])
+		var row: Array = []
+		for j in BOARD_SIZE:
+			row.append(0)
+		board.append(row)
 
 func spawn_tile() -> void:
 	var empty_cells: Array = []
