@@ -229,8 +229,8 @@ func _show_game_over() -> void:
 	var label = Label.new()
 	label.name = "GameOverLabel"
 	label.text = "遊戲結束！\n最終分數：" + str(score) + "\n按「重新開始」繼續"
-	label.horizontal_alignment = HorizontalAlignment.CENTER
-	label.vertical_alignment = VerticalAlignment.CENTER
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	label.add_theme_color_override("font_color", Color.WHITE)
 	label.add_theme_font_size_override("font_size", 36)
