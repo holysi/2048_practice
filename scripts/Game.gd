@@ -14,11 +14,20 @@ var tile_nodes: Array = []  # 2D Array，對應 board 位置
 const BOARD_SIZE = 4
 const MAX_HISTORY = 3
 
+var target_tile: int = 2048
+var level_index: int = 4
+var elapsed_time: float = 0.0
+var _timer_running: bool = false
+var _win_shown: bool = false
+
 var board: Array = []
 var score: int = 0
 var history: Array = []  # 每筆: {"board": Array, "score": int}
 
 func _ready() -> void:
+	level_index = SaveData.current_level_index
+	target_tile = SaveData.LEVELS[level_index]["target"]
+	_timer_running = true
 	_init_board()
 	_create_tile_nodes()
 	spawn_tile()
@@ -26,6 +35,10 @@ func _ready() -> void:
 	# 等待一個 frame 讓 layout 完成，確保 board_container.size 已計算
 	await get_tree().process_frame
 	_update_display()
+
+func _process(delta: float) -> void:
+	if _timer_running:
+		elapsed_time += delta
 
 func _init_board() -> void:
 	board = []
@@ -147,17 +160,16 @@ func _update_display() -> void:
 	undo_button.disabled = history.is_empty()
 
 func _on_undo_pressed() -> void:
+	if _win_shown:
+		return
 	if undo():
 		_update_display()
 
 func _on_restart_pressed() -> void:
-	# 清除 game over 覆蓋層（如果存在）
-	var overlay = $UI.get_node_or_null("GameOverOverlay")
-	var label = $UI.get_node_or_null("GameOverLabel")
-	if overlay:
-		overlay.queue_free()
-	if label:
-		label.queue_free()
+	for node_name in ["GameOverOverlay", "GameOverLabel", "WinOverlay", "WinLabel", "WinButtons"]:
+		var node = $UI.get_node_or_null(node_name)
+		if node:
+			node.queue_free()
 	restart()
 	_update_display()
 
@@ -172,6 +184,9 @@ func undo() -> bool:
 func restart() -> void:
 	history.clear()
 	score = 0
+	elapsed_time = 0.0
+	_timer_running = true
+	_win_shown = false
 	_init_board()
 	spawn_tile()
 	spawn_tile()
@@ -215,10 +230,76 @@ func _input(event: InputEvent) -> void:
 				_try_move(direction)
 
 func _try_move(direction: String) -> void:
+	if _win_shown:
+		return
 	if move(direction):
 		_update_display()
-		if is_game_over():
+		if _check_win():
+			_show_win()
+		elif is_game_over():
 			_show_game_over()
+
+func _check_win() -> bool:
+	for row in BOARD_SIZE:
+		for col in BOARD_SIZE:
+			if board[row][col] >= target_tile:
+				return true
+	return false
+
+func _show_win() -> void:
+	_timer_running = false
+	_win_shown = true
+	SaveData.submit_record(target_tile, score, elapsed_time)
+	SaveData.unlock_next(level_index)
+
+	var overlay = ColorRect.new()
+	overlay.name = "WinOverlay"
+	overlay.color = Color(0, 0, 0, 0.7)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+
+	var label = Label.new()
+	label.name = "WinLabel"
+	label.text = "🎉 通關！\n分數：%d　時間：%.1f 秒" % [score, elapsed_time]
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_font_size_override("font_size", 32)
+
+	var btn_replay = Button.new()
+	btn_replay.text = "再玩一次"
+	btn_replay.pressed.connect(_on_win_replay)
+
+	var btn_next = Button.new()
+	btn_next.text = "下一關"
+	btn_next.disabled = (level_index >= SaveData.LEVELS.size() - 1)
+	btn_next.pressed.connect(_on_win_next)
+
+	var btn_select = Button.new()
+	btn_select.text = "返回選關"
+	btn_select.pressed.connect(_on_win_select)
+
+	var hbox = HBoxContainer.new()
+	hbox.name = "WinButtons"
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	hbox.add_child(btn_replay)
+	hbox.add_child(btn_next)
+	hbox.add_child(btn_select)
+
+	$UI.add_child(overlay)
+	$UI.add_child(label)
+	$UI.add_child(hbox)
+
+func _on_win_replay() -> void:
+	get_tree().change_scene_to_file("res://scenes/Game.tscn")
+
+func _on_win_next() -> void:
+	SaveData.current_level_index = level_index + 1
+	get_tree().change_scene_to_file("res://scenes/Game.tscn")
+
+func _on_win_select() -> void:
+	get_tree().change_scene_to_file("res://scenes/LevelSelect.tscn")
 
 func _show_game_over() -> void:
 	var overlay = ColorRect.new()
