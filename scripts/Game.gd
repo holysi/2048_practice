@@ -19,6 +19,7 @@ var level_index: int = 4
 var elapsed_time: float = 0.0
 var _timer_running: bool = false
 var _win_shown: bool = false
+var _last_spawn: Vector2i = Vector2i(-1, -1)
 
 var board: Array = []
 var score: int = 0
@@ -49,6 +50,7 @@ func _init_board() -> void:
 		board.append(row)
 
 func spawn_tile() -> void:
+	_last_spawn = Vector2i(-1, -1)
 	var empty_cells: Array = []
 	for row in BOARD_SIZE:
 		for col in BOARD_SIZE:
@@ -56,8 +58,9 @@ func spawn_tile() -> void:
 				empty_cells.append(Vector2i(row, col))
 	if empty_cells.is_empty():
 		return
-	var cell = empty_cells[randi() % empty_cells.size()]
+	var cell: Vector2i = empty_cells[randi() % empty_cells.size()]
 	board[cell.x][cell.y] = 4 if randf() < 0.1 else 2
+	_last_spawn = cell
 
 # 將一列向左合併，回傳 [新列, 本次得分]
 func _merge_row_left(row: Array) -> Array:
@@ -232,12 +235,28 @@ func _input(event: InputEvent) -> void:
 func _try_move(direction: String) -> void:
 	if _win_shown:
 		return
+	var pre_board: Array = _copy_board(board)
 	if move(direction):
 		_update_display()
+		# --- animations ---
+		var tone_played := false
+		for row in BOARD_SIZE:
+			for col in BOARD_SIZE:
+				if board[row][col] > pre_board[row][col] and board[row][col] > 0:
+					tile_nodes[row][col].animate_merge(board[row][col])
+					if not tone_played:
+						_play_merge_tone(board[row][col])
+						tone_played = true
+		if _last_spawn != Vector2i(-1, -1):
+			tile_nodes[_last_spawn.x][_last_spawn.y].animate_spawn()
+		# --- win / game-over (unchanged) ---
 		if _check_win():
 			_show_win()
 		elif is_game_over():
 			_show_game_over()
+
+func _play_merge_tone(_value: int) -> void:
+	pass  # TODO: implement in Chunk 3
 
 func _check_win() -> bool:
 	for row in BOARD_SIZE:
