@@ -23,7 +23,7 @@ func get_unlocked() -> int:
     return _data.get("unlocked_levels", 1)
 
 func get_records(target: int) -> Array:
-    return _data["records"].get(str(target), [])
+    return _data.get("records", {}).get(str(target), [])
 
 func submit_record(target: int, score: int, time: float) -> void:
     var key = str(target)
@@ -65,6 +65,9 @@ func _load() -> void:
 
 func _save() -> void:
     var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+    if f == null:
+        push_error("SaveData: failed to open save file for writing")
+        return
     f.store_string(JSON.stringify(_data))
     f.close()
 
