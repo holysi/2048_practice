@@ -255,6 +255,7 @@ func _show_win() -> void:
 	var overlay = ColorRect.new()
 	overlay.name = "WinOverlay"
 	overlay.color = Color(0, 0, 0, 0.7)
+	$UI.add_child(overlay)
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 
 	var label = Label.new()
@@ -262,9 +263,10 @@ func _show_win() -> void:
 	label.text = "🎉 通關！\n分數：%d　時間：%.1f 秒" % [score, elapsed_time]
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	label.add_theme_color_override("font_color", Color.WHITE)
 	label.add_theme_font_size_override("font_size", 32)
+	$UI.add_child(label)
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
 
 	var btn_replay = Button.new()
 	btn_replay.text = "再玩一次"
@@ -282,14 +284,14 @@ func _show_win() -> void:
 	var hbox = HBoxContainer.new()
 	hbox.name = "WinButtons"
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	hbox.add_child(btn_replay)
 	hbox.add_child(btn_next)
 	hbox.add_child(btn_select)
-
-	$UI.add_child(overlay)
-	$UI.add_child(label)
 	$UI.add_child(hbox)
+	hbox.anchor_left   = 0.0
+	hbox.anchor_right  = 1.0
+	hbox.anchor_top    = 0.78
+	hbox.anchor_bottom = 1.0
 
 func _on_win_replay() -> void:
 	get_tree().change_scene_to_file("res://scenes/Game.tscn")
@@ -308,6 +310,7 @@ func _show_game_over() -> void:
 	var overlay = ColorRect.new()
 	overlay.name = "GameOverOverlay"
 	overlay.color = Color(0, 0, 0, 0.6)
+	$UI.add_child(overlay)
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 
 	var label = Label.new()
@@ -315,9 +318,7 @@ func _show_game_over() -> void:
 	label.text = "遊戲結束！\n最終分數：" + str(score) + "\n按「重新開始」繼續"
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	label.add_theme_color_override("font_color", Color.WHITE)
 	label.add_theme_font_size_override("font_size", 36)
-
-	$UI.add_child(overlay)
 	$UI.add_child(label)
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
