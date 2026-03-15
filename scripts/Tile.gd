@@ -35,6 +35,7 @@ var _anim_tween: Tween = null
 
 func animate_spawn() -> void:
 	_kill_tween()
+	pivot_offset = size / 2
 	scale = Vector2.ZERO
 	_anim_tween = create_tween()
 	_anim_tween.tween_property(self, "scale", Vector2.ONE, 0.12)\
@@ -43,6 +44,7 @@ func animate_spawn() -> void:
 
 func animate_merge(merged_value: int) -> void:
 	_kill_tween()
+	pivot_offset = size / 2
 	var intensity: float = log(float(merged_value)) / log(2048.0)
 	var peak: float = lerp(1.10, 1.40, intensity)
 	var dur: float  = lerp(0.08, 0.20, intensity)

@@ -198,6 +198,7 @@ func restart() -> void:
 	elapsed_time = 0.0
 	_timer_running = true
 	_win_shown = false
+	_last_spawn = Vector2i(-1, -1)
 	_init_board()
 	spawn_tile()
 	spawn_tile()
