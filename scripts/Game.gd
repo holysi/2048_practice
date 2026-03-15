@@ -8,6 +8,7 @@ extends Node2D
 @onready var score_value: Label = $UI/TopBar/ScoreBox/ScoreValue
 @onready var undo_button: Button = $UI/BottomBar/UndoButton
 @onready var board_container: AspectRatioContainer = $BoardContainer
+@onready var merge_audio: AudioStreamPlayer = $MergeAudio
 
 var tile_nodes: Array = []  # 2D Array，對應 board 位置
 
@@ -36,6 +37,12 @@ func _ready() -> void:
 	# 等待一個 frame 讓 layout 完成，確保 board_container.size 已計算
 	await get_tree().process_frame
 	_update_display()
+	# --- audio setup ---
+	var gen := AudioStreamGenerator.new()
+	gen.mix_rate = 22050.0
+	gen.buffer_length = 0.1
+	merge_audio.stream = gen
+	merge_audio.play()
 
 func _process(delta: float) -> void:
 	if _timer_running:
@@ -256,8 +263,20 @@ func _try_move(direction: String) -> void:
 		elif is_game_over():
 			_show_game_over()
 
-func _play_merge_tone(_value: int) -> void:
-	pass  # TODO: implement in Chunk 3
+func _play_merge_tone(value: int) -> void:
+	var playback := merge_audio.get_stream_playback() as AudioStreamGeneratorPlayback
+	if playback == null:
+		return
+	var freq    := 330.0 * pow(4.0, log(float(value)) / log(2048.0))
+	var dur     := 0.06
+	var sr      := 22050.0
+	var frames  := int(sr * dur)
+	playback.clear_buffer()
+	for i in frames:
+		var t   := float(i) / sr
+		var amp := 0.5 * (1.0 - t / dur)
+		var s   := sin(TAU * freq * t) * amp
+		playback.push_frame(Vector2(s, s))
 
 func _check_win() -> bool:
 	for row in BOARD_SIZE:
