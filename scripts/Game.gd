@@ -14,6 +14,7 @@ var tile_nodes: Array = []  # 2D Array，對應 board 位置
 
 const BOARD_SIZE = 4
 const MAX_HISTORY = 3
+const AUDIO_SAMPLE_RATE = 22050
 
 var target_tile: int = 2048
 var level_index: int = 4
@@ -39,7 +40,7 @@ func _ready() -> void:
 	_update_display()
 	# --- audio setup ---
 	var gen := AudioStreamGenerator.new()
-	gen.mix_rate = 22050.0
+	gen.mix_rate = AUDIO_SAMPLE_RATE
 	gen.buffer_length = 0.1
 	merge_audio.stream = gen
 	merge_audio.play()
@@ -269,7 +270,7 @@ func _play_merge_tone(value: int) -> void:
 		return
 	var freq    := 330.0 * pow(4.0, log(float(value)) / log(2048.0))
 	var dur     := 0.06
-	var sr      := 22050.0
+	var sr      := float(AUDIO_SAMPLE_RATE)
 	var frames  := int(sr * dur)
 	playback.clear_buffer()
 	for i in frames:
@@ -286,6 +287,7 @@ func _check_win() -> bool:
 	return false
 
 func _show_win() -> void:
+	merge_audio.stop()
 	_timer_running = false
 	_win_shown = true
 	SaveData.submit_record(target_tile, score, elapsed_time)
@@ -345,6 +347,7 @@ func _on_win_select() -> void:
 	get_tree().change_scene_to_file("res://scenes/LevelSelect.tscn")
 
 func _show_game_over() -> void:
+	merge_audio.stop()
 	_timer_running = false
 	var overlay = ColorRect.new()
 	overlay.name = "GameOverOverlay"
