@@ -1,7 +1,7 @@
 [gd_scene load_steps=2 format=3 uid="uid://main2048scene1"]
 
-[ext_resource type="PackedScene" path="res://scenes/Game.tscn" id="1_gamescene"]
+[ext_resource type="PackedScene" path="res://scenes/LevelSelect.tscn" id="1_levelselect"]
 
 [node name="Main" type="Node"]
 
-[node name="Game" parent="." instance=ExtResource("1_gamescene")]
+[node name="LevelSelect" parent="." instance=ExtResource("1_levelselect")]
