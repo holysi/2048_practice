@@ -81,6 +81,8 @@ custom_minimum_size = Vector2(80, 80)
 
 [node name="TileContainer" type="Node2D" parent="."]
 
+[node name="MergeAudio" type="AudioStreamPlayer" parent="."]
+
 [node name="UI" type="CanvasLayer" parent="."]
 
 [node name="TopBar" type="HBoxContainer" parent="UI"]
