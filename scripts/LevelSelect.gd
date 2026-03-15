@@ -39,7 +39,7 @@ func _show_leaderboard(index: int) -> void:
     var level = SaveData.LEVELS[index]
     level_title.text = level["name"] + "  排行榜"
     for child in record_list.get_children():
-        child.queue_free()
+        child.free()
     var records = SaveData.get_records(level["target"])
     if records.is_empty():
         var empty_label = Label.new()
