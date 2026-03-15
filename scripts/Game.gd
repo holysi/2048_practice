@@ -25,7 +25,7 @@ var score: int = 0
 var history: Array = []  # 每筆: {"board": Array, "score": int}
 
 func _ready() -> void:
-	level_index = SaveData.current_level_index
+	level_index = clamp(SaveData.current_level_index, 0, SaveData.LEVELS.size() - 1)
 	target_tile = SaveData.LEVELS[level_index]["target"]
 	_timer_running = true
 	_init_board()
@@ -295,6 +295,8 @@ func _on_win_replay() -> void:
 	get_tree().change_scene_to_file("res://scenes/Game.tscn")
 
 func _on_win_next() -> void:
+	if level_index >= SaveData.LEVELS.size() - 1:
+		return
 	SaveData.current_level_index = level_index + 1
 	get_tree().change_scene_to_file("res://scenes/Game.tscn")
 
@@ -302,6 +304,7 @@ func _on_win_select() -> void:
 	get_tree().change_scene_to_file("res://scenes/LevelSelect.tscn")
 
 func _show_game_over() -> void:
+	_timer_running = false
 	var overlay = ColorRect.new()
 	overlay.name = "GameOverOverlay"
 	overlay.color = Color(0, 0, 0, 0.6)
