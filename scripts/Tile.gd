@@ -41,11 +41,11 @@ func animate_spawn() -> void:
 		.set_ease(Tween.EASE_OUT)\
 		.set_trans(Tween.TRANS_BACK)
 
-func animate_merge(value: int) -> void:
+func animate_merge(merged_value: int) -> void:
 	_kill_tween()
-	var t: float = log(float(value)) / log(2048.0)
-	var peak: float = lerp(1.10, 1.40, t)
-	var dur: float  = lerp(0.08, 0.20, t)
+	var intensity: float = log(float(merged_value)) / log(2048.0)
+	var peak: float = lerp(1.10, 1.40, intensity)
+	var dur: float  = lerp(0.08, 0.20, intensity)
 	_anim_tween = create_tween()
 	_anim_tween.tween_property(self, "scale", Vector2(peak, peak), dur * 0.5)\
 		.set_ease(Tween.EASE_OUT)\
@@ -57,4 +57,4 @@ func animate_merge(value: int) -> void:
 func _kill_tween() -> void:
 	if _anim_tween != null and _anim_tween.is_running():
 		_anim_tween.kill()
-	scale = Vector2.ONE
+	scale = Vector2.ONE  # always reset to guarantee a clean starting scale

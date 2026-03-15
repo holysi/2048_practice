@@ -242,7 +242,8 @@ func _try_move(direction: String) -> void:
 		var tone_played := false
 		for row in BOARD_SIZE:
 			for col in BOARD_SIZE:
-				if board[row][col] > pre_board[row][col] and board[row][col] > 0:
+				if board[row][col] > pre_board[row][col] and board[row][col] > 0 \
+						and Vector2i(row, col) != _last_spawn:
 					tile_nodes[row][col].animate_merge(board[row][col])
 					if not tone_played:
 						_play_merge_tone(board[row][col])
