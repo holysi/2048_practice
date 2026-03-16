@@ -226,6 +226,25 @@ func _use_bomb() -> void:
 	_play_bomb_tone()
 	_update_display()
 
+func _play_bomb_animation() -> void:
+	# Scale-pulse the board container
+	var board_tween := create_tween()
+	board_tween.tween_property(board_container, "scale", Vector2(1.05, 1.05), 0.1) \
+		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
+	board_tween.tween_property(board_container, "scale", Vector2.ONE, 0.2) \
+		.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_SINE)
+
+	# Full-screen white flash that fades out
+	var flash := ColorRect.new()
+	flash.color = Color(1.0, 1.0, 1.0, 0.6)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$UI.add_child(flash)
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var flash_tween := create_tween()
+	flash_tween.tween_property(flash, "color:a", 0.0, 0.4) \
+		.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_SINE)
+	flash_tween.tween_callback(flash.queue_free)  # self-cleaning node
+
 func _on_undo_pressed() -> void:
 	if _win_shown:
 		return
