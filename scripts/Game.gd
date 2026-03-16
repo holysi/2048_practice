@@ -265,7 +265,7 @@ func _play_bomb_tone() -> void:
 		playback.push_frame(Vector2(s, s))
 
 func _on_undo_pressed() -> void:
-	if _win_shown:
+	if _win_shown or is_game_over():
 		return
 	if undo():
 		_update_display()
@@ -339,7 +339,7 @@ func _input(event: InputEvent) -> void:
 				_try_move(direction)
 
 func _try_move(direction: String) -> void:
-	if _win_shown:
+	if _win_shown or is_game_over():
 		return
 	var pre_board: Array = _copy_board(board)
 	if move(direction):
@@ -397,10 +397,7 @@ func _show_win() -> void:
 	SaveData.submit_record(target_tile, score, elapsed_time)
 	SaveData.unlock_next(level_index)
 
-	# Disable bomb button (forward-compatible: BombButton may not exist in Chunk 1)
-	var bb := $UI/TopBar.get_node_or_null("BombButton")
-	if bb:
-		bb.disabled = true
+	_update_bomb_ui()
 
 	var overlay := ColorRect.new()
 	overlay.name = "WinOverlay"
@@ -498,9 +495,4 @@ func _show_game_over() -> void:
 	info_lbl.add_theme_font_size_override("font_size", 20)
 	panel.add_child(info_lbl)
 
-	# Disable bomb button so the player cannot use it after game-over
-	# (bomb_button may not exist yet if Chunk 3 hasn't been implemented;
-	#  use get_node_or_null to keep this forward-compatible)
-	var bb := $UI/TopBar.get_node_or_null("BombButton")
-	if bb:
-		bb.disabled = true
+	_update_bomb_ui()
