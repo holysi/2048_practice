@@ -364,17 +364,40 @@ func _on_win_select() -> void:
 func _show_game_over() -> void:
 	merge_audio.stop()
 	_timer_running = false
-	var overlay = ColorRect.new()
+
+	var overlay := ColorRect.new()
 	overlay.name = "GameOverOverlay"
 	overlay.color = Color(0, 0, 0, 0.6)
 	$UI.add_child(overlay)
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 
-	var label = Label.new()
-	label.name = "GameOverLabel"
-	label.text = "遊戲結束！\n最終分數：" + str(score) + "\n按「重新開始」繼續"
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_color_override("font_color", Color.WHITE)
-	label.add_theme_font_size_override("font_size", 24)
-	$UI.add_child(label)
-	label.set_anchors_preset(Control.PRESET_CENTER)
+	var panel := VBoxContainer.new()
+	panel.name = "GameOverPanel"
+	panel.alignment = BoxContainer.ALIGNMENT_CENTER
+	panel.add_theme_constant_override("separation", 12)
+	panel.custom_minimum_size = Vector2(300, 0)
+	$UI.add_child(panel)
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
+
+	var title_lbl := Label.new()
+	title_lbl.text = "遊戲結束！"
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.add_theme_color_override("font_color", Color.WHITE)
+	title_lbl.add_theme_font_size_override("font_size", 28)
+	panel.add_child(title_lbl)
+
+	var info_lbl := Label.new()
+	info_lbl.text = "最終分數：%d\n按「重新開始」繼續" % score
+	info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info_lbl.add_theme_color_override("font_color", Color.WHITE)
+	info_lbl.add_theme_font_size_override("font_size", 20)
+	panel.add_child(info_lbl)
+
+	# Disable bomb button so the player cannot use it after game-over
+	# (bomb_button may not exist yet if Chunk 3 hasn't been implemented;
+	#  use get_node_or_null to keep this forward-compatible)
+	var bb := $UI/TopBar.get_node_or_null("BombButton")
+	if bb:
+		bb.disabled = true
