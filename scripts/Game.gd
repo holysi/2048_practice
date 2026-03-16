@@ -245,6 +245,22 @@ func _play_bomb_animation() -> void:
 		.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_SINE)
 	flash_tween.tween_callback(flash.queue_free)  # self-cleaning node
 
+func _play_bomb_tone() -> void:
+	var playback := merge_audio.get_stream_playback() as AudioStreamGeneratorPlayback
+	if playback == null:
+		return
+	var freq   := 80.0
+	var dur    := 0.3
+	var sr     := float(AUDIO_SAMPLE_RATE)
+	var frames := int(sr * dur)
+	playback.clear_buffer()
+	for i in frames:
+		var t     := float(i) / sr
+		var amp   := 0.4 * (1.0 - t / dur)          # linear decay envelope
+		var phase := fmod(freq * t, 1.0)             # sawtooth phase 0..1
+		var s     := (2.0 * phase - 1.0) * amp       # sawtooth -1..1, scaled
+		playback.push_frame(Vector2(s, s))
+
 func _on_undo_pressed() -> void:
 	if _win_shown:
 		return
