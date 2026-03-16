@@ -188,6 +188,44 @@ func _update_bomb_ui() -> void:
 	bomb_button.text = "💣 ×%d" % bomb_count
 	bomb_button.disabled = (bomb_count == 0 or _win_shown or is_game_over())
 
+func _on_bomb_pressed() -> void:
+	_use_bomb()
+
+func _use_bomb() -> void:
+	if bomb_count == 0 or _win_shown or is_game_over():
+		return
+	bomb_count -= 1
+	_update_bomb_ui()
+
+	# Collect all non-zero positions and values
+	var positions: Array = []
+	var values: Array    = []
+	for row in BOARD_SIZE:
+		for col in BOARD_SIZE:
+			if board[row][col] != 0:
+				positions.append(Vector2i(row, col))
+				values.append(board[row][col])
+
+	# Randomly redistribute values across same positions
+	values.shuffle()
+	for i in positions.size():
+		board[positions[i].x][positions[i].y] = values[i]
+
+	# Clear the 2 cells that now hold the smallest values
+	positions.sort_custom(func(a, b):
+		return board[a.x][a.y] < board[b.x][b.y]
+	)
+	var to_clear: int = min(2, positions.size())
+	for i in to_clear:
+		board[positions[i].x][positions[i].y] = 0
+
+	# Undo history is invalid after a shuffle
+	history.clear()
+
+	_play_bomb_animation()
+	_play_bomb_tone()
+	_update_display()
+
 func _on_undo_pressed() -> void:
 	if _win_shown:
 		return
