@@ -41,11 +41,11 @@
   const MAX_RECORDS = 5
 
   const LEVELS = [
-      { "target": 128,  "name": "Lv.1 — 128" },
-      { "target": 256,  "name": "Lv.2 — 256" },
-      { "target": 512,  "name": "Lv.3 — 512" },
-      { "target": 1024, "name": "Lv.4 — 1024" },
-      { "target": 2048, "name": "Lv.5 — 2048" },
+	  { "target": 128,  "name": "Lv.1 — 128" },
+	  { "target": 256,  "name": "Lv.2 — 256" },
+	  { "target": 512,  "name": "Lv.3 — 512" },
+	  { "target": 1024, "name": "Lv.4 — 1024" },
+	  { "target": 2048, "name": "Lv.5 — 2048" },
   ]
 
   var current_level_index: int = 0  # 場景切換用，LevelSelect 寫入，Game 讀取
@@ -53,62 +53,62 @@
   var _data: Dictionary = {}
 
   func _ready() -> void:
-      _load()
+	  _load()
 
   func get_unlocked() -> int:
-      return _data.get("unlocked_levels", 1)
+	  return _data.get("unlocked_levels", 1)
 
   func get_records(target: int) -> Array:
-      return _data["records"].get(str(target), [])
+	  return _data["records"].get(str(target), [])
 
   func submit_record(target: int, score: int, time: float) -> void:
-      var key = str(target)
-      var list: Array = _data["records"].get(key, [])
-      list.append({ "score": score, "time": time })
-      list.sort_custom(func(a, b):
-          if a["score"] != b["score"]:
-              return a["score"] > b["score"]
-          return a["time"] < b["time"]
-      )
-      if list.size() > MAX_RECORDS:
-          list.resize(MAX_RECORDS)
-      _data["records"][key] = list
-      _save()
+	  var key = str(target)
+	  var list: Array = _data["records"].get(key, [])
+	  list.append({ "score": score, "time": time })
+	  list.sort_custom(func(a, b):
+		  if a["score"] != b["score"]:
+			  return a["score"] > b["score"]
+		  return a["time"] < b["time"]
+	  )
+	  if list.size() > MAX_RECORDS:
+		  list.resize(MAX_RECORDS)
+	  _data["records"][key] = list
+	  _save()
 
   func unlock_next(current_index: int) -> void:
-      var needed = current_index + 2
-      var capped = min(needed, LEVELS.size())
-      if capped > _data.get("unlocked_levels", 1):
-          _data["unlocked_levels"] = capped
-          _save()
+	  var needed = current_index + 2
+	  var capped = min(needed, LEVELS.size())
+	  if capped > _data.get("unlocked_levels", 1):
+		  _data["unlocked_levels"] = capped
+		  _save()
 
   func _load() -> void:
-      if not FileAccess.file_exists(SAVE_PATH):
-          _data = _default_data()
-          return
-      var f = FileAccess.open(SAVE_PATH, FileAccess.READ)
-      var text = f.get_as_text()
-      f.close()
-      var parsed = JSON.parse_string(text)
-      if parsed == null or not parsed is Dictionary:
-          _data = _default_data()
-          return
-      # 確保 records 鍵存在（防止舊版存檔或手動修改導致 key 缺失）
-      if not parsed.has("records") or not parsed["records"] is Dictionary:
-          _data = _default_data()
-          return
-      _data = parsed
+	  if not FileAccess.file_exists(SAVE_PATH):
+		  _data = _default_data()
+		  return
+	  var f = FileAccess.open(SAVE_PATH, FileAccess.READ)
+	  var text = f.get_as_text()
+	  f.close()
+	  var parsed = JSON.parse_string(text)
+	  if parsed == null or not parsed is Dictionary:
+		  _data = _default_data()
+		  return
+	  # 確保 records 鍵存在（防止舊版存檔或手動修改導致 key 缺失）
+	  if not parsed.has("records") or not parsed["records"] is Dictionary:
+		  _data = _default_data()
+		  return
+	  _data = parsed
 
   func _save() -> void:
-      var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-      f.store_string(JSON.stringify(_data))
-      f.close()
+	  var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	  f.store_string(JSON.stringify(_data))
+	  f.close()
 
   func _default_data() -> Dictionary:
-      return {
-          "unlocked_levels": 1,
-          "records": { "128": [], "256": [], "512": [], "1024": [], "2048": [] }
-      }
+	  return {
+		  "unlocked_levels": 1,
+		  "records": { "128": [], "256": [], "512": [], "1024": [], "2048": [] }
+	  }
   ```
 
 - [ ] **Step 2: 在 `project.godot` 加入 AutoLoad 設定**
@@ -205,48 +205,48 @@
   var _selected_index: int = 0
 
   func _ready() -> void:
-      _build_level_buttons()
-      start_button.pressed.connect(_on_start_pressed)
-      _show_leaderboard(0)
+	  _build_level_buttons()
+	  start_button.pressed.connect(_on_start_pressed)
+	  _show_leaderboard(0)
 
   func _build_level_buttons() -> void:
-      var unlocked = SaveData.get_unlocked()
-      for i in SaveData.LEVELS.size():
-          var level = SaveData.LEVELS[i]
-          var btn = Button.new()
-          if i < unlocked:
-              btn.text = level["name"]
-          else:
-              btn.text = level["name"] + "  🔒"
-              btn.disabled = true
-          var idx = i  # 捕獲迴圈變數
-          btn.pressed.connect(func(): _on_level_pressed(idx))
-          level_list.add_child(btn)
+	  var unlocked = SaveData.get_unlocked()
+	  for i in SaveData.LEVELS.size():
+		  var level = SaveData.LEVELS[i]
+		  var btn = Button.new()
+		  if i < unlocked:
+			  btn.text = level["name"]
+		  else:
+			  btn.text = level["name"] + "  🔒"
+			  btn.disabled = true
+		  var idx = i  # 捕獲迴圈變數
+		  btn.pressed.connect(func(): _on_level_pressed(idx))
+		  level_list.add_child(btn)
 
   func _on_level_pressed(index: int) -> void:
-      _selected_index = index
-      _show_leaderboard(index)
+	  _selected_index = index
+	  _show_leaderboard(index)
 
   func _on_start_pressed() -> void:
-      SaveData.current_level_index = _selected_index
-      get_tree().change_scene_to_file("res://scenes/Game.tscn")
+	  SaveData.current_level_index = _selected_index
+	  get_tree().change_scene_to_file("res://scenes/Game.tscn")
 
   func _show_leaderboard(index: int) -> void:
-      var level = SaveData.LEVELS[index]
-      level_title.text = level["name"] + "  排行榜"
-      for child in record_list.get_children():
-          child.queue_free()
-      var records = SaveData.get_records(level["target"])
-      if records.is_empty():
-          var empty_label = Label.new()
-          empty_label.text = "尚無紀錄"
-          record_list.add_child(empty_label)
-          return
-      for i in records.size():
-          var r = records[i]
-          var row = Label.new()
-          row.text = "#%d　%d 分　%.1f 秒" % [i + 1, r["score"], r["time"]]
-          record_list.add_child(row)
+	  var level = SaveData.LEVELS[index]
+	  level_title.text = level["name"] + "  排行榜"
+	  for child in record_list.get_children():
+		  child.queue_free()
+	  var records = SaveData.get_records(level["target"])
+	  if records.is_empty():
+		  var empty_label = Label.new()
+		  empty_label.text = "尚無紀錄"
+		  record_list.add_child(empty_label)
+		  return
+	  for i in records.size():
+		  var r = records[i]
+		  var row = Label.new()
+		  row.text = "#%d　%d 分　%.1f 秒" % [i + 1, r["score"], r["time"]]
+		  record_list.add_child(row)
   ```
 
 ### Task 3: 在 Godot 編輯器建立 LevelSelect.tscn
@@ -336,15 +336,15 @@
 
   ```gdscript
   func _ready() -> void:
-      level_index = SaveData.current_level_index
-      target_tile = SaveData.LEVELS[level_index]["target"]
-      _timer_running = true
-      _init_board()
-      _create_tile_nodes()
-      spawn_tile()
-      spawn_tile()
-      await get_tree().process_frame
-      _update_display()
+	  level_index = SaveData.current_level_index
+	  target_tile = SaveData.LEVELS[level_index]["target"]
+	  _timer_running = true
+	  _init_board()
+	  _create_tile_nodes()
+	  spawn_tile()
+	  spawn_tile()
+	  await get_tree().process_frame
+	  _update_display()
   ```
 
 - [ ] **Step 3: 新增 `_process(delta)`**
@@ -353,8 +353,8 @@
 
   ```gdscript
   func _process(delta: float) -> void:
-      if _timer_running:
-          elapsed_time += delta
+	  if _timer_running:
+		  elapsed_time += delta
   ```
 
 - [ ] **Step 4: 修改 `_try_move()` 加入 win guard 與 win 偵測**
@@ -363,84 +363,84 @@
 
   ```gdscript
   func _try_move(direction: String) -> void:
-      if _win_shown:
-          return
-      if move(direction):
-          _update_display()
-          if _check_win():
-              _show_win()
-          elif is_game_over():
-              _show_game_over()
+	  if _win_shown:
+		  return
+	  if move(direction):
+		  _update_display()
+		  if _check_win():
+			  _show_win()
+		  elif is_game_over():
+			  _show_game_over()
   ```
 
 - [ ] **Step 5: 新增 `_check_win()`**
 
   ```gdscript
   func _check_win() -> bool:
-      for row in BOARD_SIZE:
-          for col in BOARD_SIZE:
-              if board[row][col] >= target_tile:
-                  return true
-      return false
+	  for row in BOARD_SIZE:
+		  for col in BOARD_SIZE:
+			  if board[row][col] >= target_tile:
+				  return true
+	  return false
   ```
 
 - [ ] **Step 6: 新增 `_show_win()`**
 
   ```gdscript
   func _show_win() -> void:
-      _timer_running = false
-      _win_shown = true
-      SaveData.submit_record(target_tile, score, elapsed_time)
-      SaveData.unlock_next(level_index)
+	  _timer_running = false
+	  _win_shown = true
+	  SaveData.submit_record(target_tile, score, elapsed_time)
+	  SaveData.unlock_next(level_index)
 
-      var overlay = ColorRect.new()
-      overlay.name = "WinOverlay"
-      overlay.color = Color(0, 0, 0, 0.7)
-      overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	  var overlay = ColorRect.new()
+	  overlay.name = "WinOverlay"
+	  overlay.color = Color(0, 0, 0, 0.7)
+	  overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 
-      var label = Label.new()
-      label.name = "WinLabel"
-      label.text = "🎉 通關！\n分數：%d　時間：%.1f 秒" % [score, elapsed_time]
-      label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-      label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-      label.set_anchors_preset(Control.PRESET_FULL_RECT)
-      label.add_theme_color_override("font_color", Color.WHITE)
-      label.add_theme_font_size_override("font_size", 32)
+	  var label = Label.new()
+	  label.name = "WinLabel"
+	  label.text = "🎉 通關！\n分數：%d　時間：%.1f 秒" % [score, elapsed_time]
+	  label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	  label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	  label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	  label.add_theme_color_override("font_color", Color.WHITE)
+	  label.add_theme_font_size_override("font_size", 32)
 
-      var btn_replay = Button.new()
-      btn_replay.text = "再玩一次"
-      btn_replay.pressed.connect(_on_win_replay)
+	  var btn_replay = Button.new()
+	  btn_replay.text = "再玩一次"
+	  btn_replay.pressed.connect(_on_win_replay)
 
-      var btn_next = Button.new()
-      btn_next.text = "下一關"
-      btn_next.disabled = (level_index >= SaveData.LEVELS.size() - 1)
-      btn_next.pressed.connect(_on_win_next)
+	  var btn_next = Button.new()
+	  btn_next.text = "下一關"
+	  btn_next.disabled = (level_index >= SaveData.LEVELS.size() - 1)
+	  btn_next.pressed.connect(_on_win_next)
 
-      var btn_select = Button.new()
-      btn_select.text = "返回選關"
-      btn_select.pressed.connect(_on_win_select)
+	  var btn_select = Button.new()
+	  btn_select.text = "返回選關"
+	  btn_select.pressed.connect(_on_win_select)
 
-      var hbox = HBoxContainer.new()
-      hbox.name = "WinButtons"
-      hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-      hbox.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-      hbox.add_child(btn_replay)
-      hbox.add_child(btn_next)
-      hbox.add_child(btn_select)
+	  var hbox = HBoxContainer.new()
+	  hbox.name = "WinButtons"
+	  hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	  hbox.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	  hbox.add_child(btn_replay)
+	  hbox.add_child(btn_next)
+	  hbox.add_child(btn_select)
 
-      $UI.add_child(overlay)
-      $UI.add_child(label)
-      $UI.add_child(hbox)
+	  $UI.add_child(overlay)
+	  $UI.add_child(label)
+	  $UI.add_child(hbox)
 
   func _on_win_replay() -> void:
-      get_tree().change_scene_to_file("res://scenes/Game.tscn")
+	  get_tree().change_scene_to_file("res://scenes/Game.tscn")
 
   func _on_win_next() -> void:
-      SaveData.current_level_index = level_index + 1
-      get_tree().change_scene_to_file("res://scenes/Game.tscn")
+	  SaveData.current_level_index = level_index + 1
+	  get_tree().change_scene_to_file("res://scenes/Game.tscn")
 
   func _on_win_select() -> void:
-      get_tree().change_scene_to_file("res://scenes/LevelSelect.tscn")
+	  get_tree().change_scene_to_file("res://scenes/LevelSelect.tscn")
   ```
 
 - [ ] **Step 7: 在 `_on_undo_pressed()` 加入 win guard**
@@ -449,10 +449,10 @@
 
   ```gdscript
   func _on_undo_pressed() -> void:
-      if _win_shown:
-          return
-      if undo():
-          _update_display()
+	  if _win_shown:
+		  return
+	  if undo():
+		  _update_display()
   ```
 
   這避免通關後玩家按 Undo 撤銷掉勝利磁磚，造成勝利覆蓋層殘留但棋盤已回退的狀態不一致。
@@ -463,14 +463,14 @@
 
   ```gdscript
   func restart() -> void:
-      history.clear()
-      score = 0
-      elapsed_time = 0.0
-      _timer_running = true
-      _win_shown = false
-      _init_board()
-      spawn_tile()
-      spawn_tile()
+	  history.clear()
+	  score = 0
+	  elapsed_time = 0.0
+	  _timer_running = true
+	  _win_shown = false
+	  _init_board()
+	  spawn_tile()
+	  spawn_tile()
   ```
 
 - [ ] **Step 9: 修改 `_on_restart_pressed()` 清除勝利覆蓋層**
@@ -479,12 +479,12 @@
 
   ```gdscript
   func _on_restart_pressed() -> void:
-      for node_name in ["GameOverOverlay", "GameOverLabel", "WinOverlay", "WinLabel", "WinButtons"]:
-          var node = $UI.get_node_or_null(node_name)
-          if node:
-              node.queue_free()
-      restart()
-      _update_display()
+	  for node_name in ["GameOverOverlay", "GameOverLabel", "WinOverlay", "WinLabel", "WinButtons"]:
+		  var node = $UI.get_node_or_null(node_name)
+		  if node:
+			  node.queue_free()
+	  restart()
+	  _update_display()
   ```
 
 - [ ] **Step 10: Commit**

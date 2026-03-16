@@ -1,7 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://main2048scene1"]
+[gd_scene format=3 uid="uid://coto27qc05qtq"]
 
-[ext_resource type="PackedScene" path="res://scenes/LevelSelect.tscn" id="1_levelselect"]
+[ext_resource type="PackedScene" uid="uid://c44p1mjh5pipr" path="res://scenes/LevelSelect.tscn" id="1_levelselect"]
 
-[node name="Main" type="Node"]
+[node name="Main" type="Node" unique_id=224559721]
 
-[node name="LevelSelect" parent="." instance=ExtResource("1_levelselect")]
+[node name="LevelSelect" parent="." unique_id=401328649 instance=ExtResource("1_levelselect")]
+grow_horizontal = 2
+grow_vertical = 2
