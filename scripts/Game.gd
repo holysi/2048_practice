@@ -177,7 +177,7 @@ func _on_undo_pressed() -> void:
 		_update_display()
 
 func _on_restart_pressed() -> void:
-	for node_name in ["GameOverOverlay", "GameOverLabel", "WinOverlay", "WinLabel", "WinButtons"]:
+	for node_name in ["GameOverOverlay", "GameOverPanel", "WinOverlay", "WinPanel"]:
 		var node = $UI.get_node_or_null(node_name)
 		if node:
 			node.queue_free()
@@ -294,46 +294,60 @@ func _show_win() -> void:
 	SaveData.submit_record(target_tile, score, elapsed_time)
 	SaveData.unlock_next(level_index)
 
-	var overlay = ColorRect.new()
+	# Disable bomb button (forward-compatible: BombButton may not exist in Chunk 1)
+	var bb := $UI/TopBar.get_node_or_null("BombButton")
+	if bb:
+		bb.disabled = true
+
+	var overlay := ColorRect.new()
 	overlay.name = "WinOverlay"
 	overlay.color = Color(0, 0, 0, 0.7)
 	$UI.add_child(overlay)
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 
-	var label = Label.new()
-	label.name = "WinLabel"
-	label.text = "🎉 通關！\n分數：%d　時間：%.1f 秒" % [score, elapsed_time]
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_color_override("font_color", Color.WHITE)
-	label.add_theme_font_size_override("font_size", 32)
-	$UI.add_child(label)
-	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var panel := VBoxContainer.new()
+	panel.name = "WinPanel"
+	panel.alignment = BoxContainer.ALIGNMENT_CENTER
+	panel.add_theme_constant_override("separation", 16)
+	panel.custom_minimum_size = Vector2(300, 0)
+	$UI.add_child(panel)
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
 
-	var btn_replay = Button.new()
+	var title_lbl := Label.new()
+	title_lbl.text = "🎉 通關！"
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.add_theme_color_override("font_color", Color.WHITE)
+	title_lbl.add_theme_font_size_override("font_size", 28)
+	panel.add_child(title_lbl)
+
+	var info_lbl := Label.new()
+	info_lbl.text = "分數：%d　時間：%.1f 秒" % [score, elapsed_time]
+	info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info_lbl.add_theme_color_override("font_color", Color.WHITE)
+	info_lbl.add_theme_font_size_override("font_size", 20)
+	panel.add_child(info_lbl)
+
+	var hbox := HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	panel.add_child(hbox)
+
+	var btn_replay := Button.new()
 	btn_replay.text = "再玩一次"
 	btn_replay.pressed.connect(_on_win_replay)
+	hbox.add_child(btn_replay)
 
-	var btn_next = Button.new()
+	var btn_next := Button.new()
 	btn_next.text = "下一關"
 	btn_next.disabled = (level_index >= SaveData.LEVELS.size() - 1)
 	btn_next.pressed.connect(_on_win_next)
+	hbox.add_child(btn_next)
 
-	var btn_select = Button.new()
+	var btn_select := Button.new()
 	btn_select.text = "返回選關"
 	btn_select.pressed.connect(_on_win_select)
-
-	var hbox = HBoxContainer.new()
-	hbox.name = "WinButtons"
-	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.add_child(btn_replay)
-	hbox.add_child(btn_next)
 	hbox.add_child(btn_select)
-	$UI.add_child(hbox)
-	hbox.anchor_left   = 0.0
-	hbox.anchor_right  = 1.0
-	hbox.anchor_top    = 0.78
-	hbox.anchor_bottom = 1.0
 
 func _on_win_replay() -> void:
 	get_tree().change_scene_to_file("res://scenes/Game.tscn")
@@ -360,8 +374,7 @@ func _show_game_over() -> void:
 	label.name = "GameOverLabel"
 	label.text = "遊戲結束！\n最終分數：" + str(score) + "\n按「重新開始」繼續"
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_color_override("font_color", Color.WHITE)
-	label.add_theme_font_size_override("font_size", 36)
+	label.add_theme_font_size_override("font_size", 24)
 	$UI.add_child(label)
-	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	label.set_anchors_preset(Control.PRESET_CENTER)
