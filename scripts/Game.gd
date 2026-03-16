@@ -67,8 +67,20 @@ func spawn_tile() -> void:
 	if empty_cells.is_empty():
 		return
 	var cell: Vector2i = empty_cells[randi() % empty_cells.size()]
-	board[cell.x][cell.y] = 4 if randf() < 0.1 else 2
+	board[cell.x][cell.y] = _pick_spawn_value()
 	_last_spawn = cell
+
+func _pick_spawn_value() -> int:
+	var level_data: Dictionary = SaveData.LEVELS[level_index]
+	var pool: Array    = level_data.get("spawn_pool",    [2, 4])
+	var weights: Array = level_data.get("spawn_weights", [90, 10])
+	var roll: int = randi() % 100
+	var cumulative: int = 0
+	for i in pool.size():
+		cumulative += weights[i]
+		if roll < cumulative:
+			return pool[i]
+	return pool[-1]  # fallback (should never reach here if weights sum to 100)
 
 # 將一列向左合併，回傳 [新列, 本次得分]
 func _merge_row_left(row: Array) -> Array:
