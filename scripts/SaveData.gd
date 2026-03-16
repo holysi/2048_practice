@@ -5,11 +5,26 @@ const SAVE_PATH = "user://save.json"
 const MAX_RECORDS = 5
 
 const LEVELS = [
-	{ "target": 128,  "name": "Lv.1 — 128" },
-	{ "target": 256,  "name": "Lv.2 — 256" },
-	{ "target": 512,  "name": "Lv.3 — 512" },
-	{ "target": 1024, "name": "Lv.4 — 1024" },
-	{ "target": 2048, "name": "Lv.5 — 2048" },
+	{
+		"target": 128, "name": "Lv.1 — 128",
+		"spawn_pool": [2, 4], "spawn_weights": [90, 10],
+	},
+	{
+		"target": 256, "name": "Lv.2 — 256",
+		"spawn_pool": [2, 4], "spawn_weights": [90, 10],
+	},
+	{
+		"target": 512, "name": "Lv.3 — 512",
+		"spawn_pool": [2, 4, 8, 16], "spawn_weights": [50, 25, 15, 10],
+	},
+	{
+		"target": 1024, "name": "Lv.4 — 1024",
+		"spawn_pool": [2, 4, 8, 16, 32], "spawn_weights": [50, 25, 12, 8, 5],
+	},
+	{
+		"target": 2048, "name": "Lv.5 — 2048",
+		"spawn_pool": [2, 4, 8, 16, 32, 64], "spawn_weights": [45, 25, 12, 8, 6, 4],
+	},
 ]
 
 var current_level_index: int = 0  # 場景切換用，LevelSelect 寫入，Game 讀取
