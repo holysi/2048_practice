@@ -9,6 +9,7 @@ extends Node2D
 @onready var undo_button: Button = $UI/BottomBar/UndoButton
 @onready var board_container: AspectRatioContainer = $BoardContainer
 @onready var merge_audio: AudioStreamPlayer = $MergeAudio
+@onready var bomb_button: Button = $UI/TopBar/BombButton
 
 var tile_nodes: Array = []  # 2D Array，對應 board 位置
 
@@ -22,6 +23,7 @@ var elapsed_time: float = 0.0
 var _timer_running: bool = false
 var _win_shown: bool = false
 var _last_spawn: Vector2i = Vector2i(-1, -1)
+var bomb_count: int = 0
 
 var board: Array = []
 var score: int = 0
@@ -182,6 +184,10 @@ func _update_display() -> void:
 	score_value.text = str(score)
 	undo_button.disabled = history.is_empty()
 
+func _update_bomb_ui() -> void:
+	bomb_button.text = "💣 ×%d" % bomb_count
+	bomb_button.disabled = (bomb_count == 0 or _win_shown or is_game_over())
+
 func _on_undo_pressed() -> void:
 	if _win_shown:
 		return
@@ -210,6 +216,8 @@ func restart() -> void:
 	elapsed_time = 0.0
 	_timer_running = true
 	_win_shown = false
+	bomb_count = 0
+	_update_bomb_ui()
 	_last_spawn = Vector2i(-1, -1)
 	_init_board()
 	spawn_tile()
@@ -259,8 +267,9 @@ func _try_move(direction: String) -> void:
 	var pre_board: Array = _copy_board(board)
 	if move(direction):
 		_update_display()
-		# --- animations ---
-		var tone_played := false
+		# --- animations + bomb award ---
+		var tone_played  := false
+		var bomb_earned  := false
 		for row in BOARD_SIZE:
 			for col in BOARD_SIZE:
 				if board[row][col] > pre_board[row][col] and board[row][col] > 0 \
@@ -269,6 +278,11 @@ func _try_move(direction: String) -> void:
 					if not tone_played:
 						_play_merge_tone(board[row][col])
 						tone_played = true
+					if not bomb_earned and board[row][col] >= 128:
+						bomb_earned = true
+		if bomb_earned:
+			bomb_count += 2
+			_update_bomb_ui()
 		if _last_spawn != Vector2i(-1, -1):
 			tile_nodes[_last_spawn.x][_last_spawn.y].animate_spawn()
 		# --- win / game-over (unchanged) ---
