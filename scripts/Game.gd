@@ -71,7 +71,7 @@ func spawn_tile() -> void:
 	var cell: Vector2i = empty_cells[randi() % empty_cells.size()]
 	board[cell.x][cell.y] = _pick_spawn_value()
 	_last_spawn = cell
-
+dd
 func _pick_spawn_value() -> int:
 	var level_data: Dictionary = SaveData.LEVELS[level_index]
 	var pool: Array    = level_data.get("spawn_pool",    [2, 4])
@@ -192,7 +192,7 @@ func _on_bomb_pressed() -> void:
 	_use_bomb()
 
 func _use_bomb() -> void:
-	if bomb_count == 0 or _win_shown or is_game_over():
+	if bomb_count == 0 or _win_shown:
 		return
 	bomb_count -= 1
 	_update_bomb_ui()
@@ -366,7 +366,10 @@ func _try_move(direction: String) -> void:
 		if _check_win():
 			_show_win()
 		elif is_game_over():
-			_show_game_over()
+			if bomb_count > 0:
+				_use_bomb()
+			else:
+				_show_game_over()
 
 func _play_merge_tone(value: int) -> void:
 	var playback := merge_audio.get_stream_playback() as AudioStreamGeneratorPlayback
@@ -410,7 +413,7 @@ func _show_win() -> void:
 	panel.alignment = BoxContainer.ALIGNMENT_CENTER
 	panel.add_theme_constant_override("separation", 16)
 	panel.custom_minimum_size = Vector2(300, 0)
-	$UI.add_child(panel)
+	overlay.add_child(panel)
 	panel.set_anchors_preset(Control.PRESET_CENTER)
 	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
@@ -476,7 +479,7 @@ func _show_game_over() -> void:
 	panel.alignment = BoxContainer.ALIGNMENT_CENTER
 	panel.add_theme_constant_override("separation", 12)
 	panel.custom_minimum_size = Vector2(300, 0)
-	$UI.add_child(panel)
+	overlay.add_child(panel)
 	panel.set_anchors_preset(Control.PRESET_CENTER)
 	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
