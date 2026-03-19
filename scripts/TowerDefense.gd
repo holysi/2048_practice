@@ -35,6 +35,8 @@ var _blocked: Array = []           # Array[Array] of bool — path cells
 func _ready() -> void:
 	# Wait for layout to resolve so size is valid
 	await get_tree().process_frame
+	if not is_instance_valid(self):
+		return
 	_build_world_waypoints()
 	_init_grid()
 	_draw_path()
@@ -73,7 +75,7 @@ func _is_cell_on_path(row: int, col: int) -> bool:
 	for i in range(_world_waypoints.size() - 1):
 		var a: Vector2 = _world_waypoints[i]
 		var b: Vector2 = _world_waypoints[i + 1]
-		if _dist_point_to_segment(cell_center, a, b) < cell_size.length() * 0.8:
+		if _dist_point_to_segment(cell_center, a, b) < cell_size.x * 0.6:
 			return true
 	return false
 
@@ -87,6 +89,7 @@ func _setup_wave_manager() -> void:
 	wave_manager.enemy_scene = enemy_scene
 	wave_manager.enemy_container = enemy_container
 	wave_manager.waypoints = _world_waypoints.duplicate()
+	wave_manager.enemy_reached_exit.connect(_on_enemy_reached_exit)
 
 func _on_wave_button_pressed() -> void:
 	wave_button.disabled = true

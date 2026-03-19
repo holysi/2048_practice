@@ -31,6 +31,7 @@ var _enemies_alive: int = 0
 signal wave_started(wave_number: int)
 signal wave_completed(wave_number: int)
 signal all_waves_completed
+signal enemy_reached_exit
 
 var enemy_scene: PackedScene
 var enemy_container: Node
@@ -40,16 +41,21 @@ func start_next_wave() -> void:
 	if current_wave >= WAVES.size():
 		all_waves_completed.emit()
 		return
+	_enemies_alive = 0   # Reset for this wave
 	var wave_data: Dictionary = WAVES[current_wave]
 	current_wave += 1
 	wave_started.emit(current_wave)
 	_spawn_wave(wave_data)
 
 func _spawn_wave(wave_data: Dictionary) -> void:
+	var total := 0
+	for group in wave_data["groups"]:
+		total += group["count"]
+	_enemies_alive = total  # Set exact count, not accumulate
+
 	for group in wave_data["groups"]:
 		for i in group["count"]:
 			_spawn_enemy(group["type"])
-			_enemies_alive += 1
 			if group["interval"] > 0.0:
 				await get_tree().create_timer(group["interval"]).timeout
 				if not is_instance_valid(self):
@@ -73,6 +79,7 @@ func _on_enemy_died(_gold: int) -> void:
 
 func _on_enemy_reached_exit() -> void:
 	_enemies_alive = max(0, _enemies_alive - 1)
+	enemy_reached_exit.emit()  # Notify TowerDefense to deduct a life
 	_check_wave_complete()
 
 func _check_wave_complete() -> void:
