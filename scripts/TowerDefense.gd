@@ -35,6 +35,7 @@ var _blocked: Array = []           # Array[Array] of bool — path cells
 @export var projectile_scene: PackedScene
 
 var _selected_tower_type: int = 0  # default BASIC
+var _info_panel: PanelContainer = null
 
 func _ready() -> void:
 	# Wait for layout to resolve so size is valid
@@ -150,10 +151,78 @@ func _input(event: InputEvent) -> void:
 			return
 		var local_pos := get_local_mouse_position()
 		var cell := world_to_cell(local_pos)
-		if is_cell_placeable(cell):
+		if cell.x < 0 or cell.x >= GRID_COLS or cell.y < 0 or cell.y >= GRID_ROWS:
+			return
+		var existing := _grid[cell.y][cell.x]
+		if existing != null:
+			_show_tower_info(existing)
+		elif is_cell_placeable(cell):
+			_close_tower_info()
 			var cost: int = TowerData.STATS[_selected_tower_type][1]["cost"]
 			if GameManager.spend_gold(cost):
 				_place_tower(cell, _selected_tower_type)
+
+
+func _show_tower_info(tower: Tower) -> void:
+	_close_tower_info()
+	var type_names := ["Basic", "Sniper", "Splash", "Slow", "Laser"]
+	_info_panel = PanelContainer.new()
+	_info_panel.custom_minimum_size = Vector2(160, 0)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	_info_panel.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "%s Lv.%d" % [type_names[tower.tower_type], tower.level]
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var stats_lbl := Label.new()
+	stats_lbl.text = "DMG: %d  RNG: %d\nRate: %.1f/s" % [tower.damage, int(tower.range_px), tower.fire_rate]
+	vbox.add_child(stats_lbl)
+
+	if tower.upgrade_cost > 0:
+		var upg_btn := Button.new()
+		upg_btn.text = "Upgrade\n%d gold" % tower.upgrade_cost
+		upg_btn.pressed.connect(func(): _upgrade_tower(tower))
+		vbox.add_child(upg_btn)
+	else:
+		var max_lbl := Label.new()
+		max_lbl.text = "MAX LEVEL"
+		max_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(max_lbl)
+
+	var close_btn := Button.new()
+	close_btn.text = "Close"
+	close_btn.pressed.connect(_close_tower_info)
+	vbox.add_child(close_btn)
+
+	# Position near the tower, clamped inside bounds
+	var world_pos := cell_to_world(tower.grid_cell)
+	_info_panel.position = world_pos + Vector2(20, -80)
+
+	add_child(_info_panel)
+	# Clamp after adding so size is resolved next frame
+	await get_tree().process_frame
+	if not is_instance_valid(_info_panel):
+		return
+	_info_panel.position.x = clamp(_info_panel.position.x, 0.0, size.x - _info_panel.size.x)
+	_info_panel.position.y = clamp(_info_panel.position.y, 0.0, size.y - _info_panel.size.y)
+
+
+func _close_tower_info() -> void:
+	if is_instance_valid(_info_panel):
+		_info_panel.queue_free()
+	_info_panel = null
+
+
+func _upgrade_tower(tower: Tower) -> void:
+	if tower.upgrade_cost <= 0:
+		return
+	if GameManager.spend_gold(tower.upgrade_cost):
+		tower.upgrade()
+		_show_tower_info(tower)   # Refresh panel
 
 func _place_tower(cell: Vector2i, type_int: int) -> void:
 	if tower_scene == null:
