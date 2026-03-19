@@ -26,6 +26,11 @@ func spend_gold(amount: int) -> bool:
 	gold_changed.emit(gold)
 	return true
 
+## Called when enemies are killed or other gold rewards are granted.
+func earn_gold(amount: int) -> void:
+	gold += amount
+	gold_changed.emit(gold)
+
 ## Called by HybridGame.gd when bomb AOE is triggered on the TD area.
 func request_bomb_aoe(world_pos: Vector2) -> void:
 	bomb_aoe_requested.emit(world_pos)

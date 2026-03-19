@@ -187,5 +187,4 @@ func is_cell_placeable(cell: Vector2i) -> bool:
 	return not _blocked[cell.y][cell.x] and _grid[cell.y][cell.x] == null
 
 func _on_enemy_killed(gold_value: int) -> void:
-	GameManager.gold += gold_value
-	GameManager.gold_changed.emit(GameManager.gold)
+	GameManager.earn_gold(gold_value)
