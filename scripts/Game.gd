@@ -1,5 +1,5 @@
 # scripts/Game.gd
-extends Node2D
+extends Control
 
 @export var tile_theme: TileTheme
 @export var tile_scene: PackedScene

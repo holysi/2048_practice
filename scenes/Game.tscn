@@ -4,7 +4,11 @@
 [ext_resource type="PackedScene" path="res://scenes/Tile.tscn" id="2_tilescene"]
 [ext_resource type="Resource" path="res://themes/cute.tres" id="3_cutetheme"]
 
-[node name="Game" type="Node2D"]
+[node name="Game" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 script = ExtResource("1_gamescript")
 tile_theme = ExtResource("3_cutetheme")
 tile_scene = ExtResource("2_tilescene")
