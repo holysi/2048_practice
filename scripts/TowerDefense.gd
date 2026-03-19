@@ -302,8 +302,8 @@ func _on_bomb_aoe_requested(_world_pos: Vector2) -> void:
 func _play_bomb_flash() -> void:
 	var flash := ColorRect.new()
 	flash.color = Color(1, 1, 1, 0.5)
-	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(flash)
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
 	var tween := create_tween()
 	tween.tween_property(flash, "modulate:a", 0.0, 0.4)
 	tween.tween_callback(flash.queue_free)
