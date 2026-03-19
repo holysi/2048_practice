@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://hybridgamescene1"]
+[gd_scene load_steps=4 format=3 uid="uid://hybridgamescene1"]
 
 [ext_resource type="Script" path="res://scripts/HybridGame.gd" id="1_hybridscript"]
 [ext_resource type="PackedScene" path="res://scenes/Game.tscn" id="2_gamescene"]
+[ext_resource type="PackedScene" path="res://scenes/TowerDefense.tscn" id="3_tdscene"]
 
 [node name="HybridGame" type="Control"]
 script = ExtResource("1_hybridscript")
@@ -25,8 +26,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TDPlaceholder" type="ColorRect" parent="RightPanel"]
+[node name="TowerDefense" parent="RightPanel" instance=ExtResource("3_tdscene")]
 layout_mode = 1
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.1, 0.15, 0.1, 1)

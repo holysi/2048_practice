@@ -4,13 +4,14 @@ enum InputMode { NORMAL, BOMB_AOE_PENDING }
 var input_mode: InputMode = InputMode.NORMAL
 
 @onready var right_panel: Control = $RightPanel
+@onready var td: Control = $RightPanel/TowerDefense
 
 func _ready() -> void:
 	pass
 
 func begin_bomb_aoe_mode() -> void:
 	input_mode = InputMode.BOMB_AOE_PENDING
-	# TD scene will add aoe cursor when connected
+	# td.show_aoe_cursor(true)  # Phase 6
 
 func cancel_bomb_aoe_mode() -> void:
 	input_mode = InputMode.NORMAL

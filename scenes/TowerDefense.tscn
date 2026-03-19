@@ -1,0 +1,68 @@
+[gd_scene load_steps=4 format=3 uid="uid://towerdefscene2048td1"]
+
+[ext_resource type="Script" path="res://scripts/TowerDefense.gd" id="1_tdscript"]
+[ext_resource type="PackedScene" path="res://scenes/Enemy.tscn" id="2_enemyscene"]
+[ext_resource type="Script" path="res://scripts/WaveManager.gd" id="3_wavescript"]
+
+[node name="TowerDefense" type="Control"]
+script = ExtResource("1_tdscript")
+anchor_right = 1.0
+anchor_bottom = 1.0
+enemy_scene = ExtResource("2_enemyscene")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.08, 0.12, 0.08, 1)
+
+[node name="PathVisual" type="Line2D" parent="."]
+width = 32.0
+default_color = Color(0.55, 0.45, 0.3, 1)
+
+[node name="PathLayer" type="Node2D" parent="."]
+
+[node name="EnemyContainer" type="Node2D" parent="PathLayer"]
+
+[node name="MapLayer" type="Node2D" parent="."]
+
+[node name="TowerContainer" type="Node2D" parent="MapLayer"]
+
+[node name="ProjectileContainer" type="Node2D" parent="."]
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 1
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="TopBar" type="HBoxContainer" parent="UI"]
+layout_mode = 1
+anchor_right = 1.0
+anchor_bottom = 0.1
+
+[node name="GoldLabel" type="Label" parent="UI/TopBar"]
+layout_mode = 2
+text = "Gold: 0"
+
+[node name="LivesLabel" type="Label" parent="UI/TopBar"]
+layout_mode = 2
+text = "Lives: 20"
+
+[node name="BottomBar" type="HBoxContainer" parent="UI"]
+layout_mode = 1
+anchor_top = 0.9
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="WaveButton" type="Button" parent="UI/BottomBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Start Wave 1"
+
+[node name="WaveLabel" type="Label" parent="UI/BottomBar"]
+layout_mode = 2
+text = "Wave 0/10"
+
+[node name="WaveManager" type="Node" parent="."]
+script = ExtResource("3_wavescript")
