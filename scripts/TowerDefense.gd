@@ -183,6 +183,7 @@ func _on_enemy_reached_exit() -> void:
 func _game_over() -> void:
 	wave_button.disabled = true
 	var overlay := ColorRect.new()
+	overlay.name = "GameOverOverlay"
 	overlay.color = Color(0, 0, 0, 0.75)
 	add_child(overlay)
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -219,9 +220,9 @@ func _restart_td() -> void:
 		child.queue_free()
 	_init_grid()
 	# Remove game-over overlay
-	for child in get_children():
-		if child is ColorRect and child.color == Color(0, 0, 0, 0.75):
-			child.queue_free()
+	var go_overlay := get_node_or_null("GameOverOverlay")
+	if go_overlay:
+		go_overlay.queue_free()
 	_wave_countdown_active = false
 	_wave_launching = false
 
