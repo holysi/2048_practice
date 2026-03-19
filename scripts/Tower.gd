@@ -17,6 +17,11 @@ var _can_hit_flying: bool = false
 
 var _td: Node = null               # TowerDefense reference
 var _projectile_scene: PackedScene = null
+var _proj_speed: float = 300.0
+
+func init(td_ref: Node, proj_scene: PackedScene) -> void:
+	_td = td_ref
+	_projectile_scene = proj_scene
 
 @onready var detection_area: Area2D = $DetectionArea
 @onready var attack_timer: Timer = $AttackTimer
@@ -48,6 +53,7 @@ func _apply_stats() -> void:
 	range_px = stats["range"]
 	fire_rate = stats["fire_rate"]
 	upgrade_cost = stats["upgrade_cost"]
+	_proj_speed = stats.get("proj_speed", 300.0)
 	_can_hit_flying = tower_type in [TowerType.SPLASH, TowerType.SLOW, TowerType.LASER]
 
 func _update_visuals() -> void:
@@ -99,7 +105,7 @@ func _fire() -> void:
 			p.slow_duration = 2.0
 		_:
 			pass
-	p.init(_target, damage, 300.0, _td)
+	p.init(_target, damage, _proj_speed, _td)
 	_td.projectile_container.add_child(p)
 
 func upgrade() -> void:

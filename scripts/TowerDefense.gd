@@ -145,6 +145,8 @@ func _on_tower_type_selected(type_int: int) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		if not get_global_rect().has_point(event.position):
+			return
 		var local_pos := get_local_mouse_position()
 		var cell := world_to_cell(local_pos)
 		if is_cell_placeable(cell):
@@ -158,8 +160,7 @@ func _place_tower(cell: Vector2i, type_int: int) -> void:
 	var t: Tower = tower_scene.instantiate()
 	t.tower_type = type_int as Tower.TowerType
 	t.grid_cell = cell
-	t._td = self
-	t._projectile_scene = projectile_scene
+	t.init(self, projectile_scene)
 	var world_pos := cell_to_world(cell)
 	t.position = world_pos
 	tower_container.add_child(t)
