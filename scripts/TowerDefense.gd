@@ -37,6 +37,7 @@ var _blocked: Array = []           # Array[Array] of bool — path cells
 var _selected_tower_type: int = 0  # default BASIC
 var _info_panel: PanelContainer = null
 var _wave_countdown_active: bool = false
+var _wave_launching: bool = false
 var _countdown_wave_num: int = 0
 
 func _ready() -> void:
@@ -111,6 +112,7 @@ func _on_wave_button_pressed() -> void:
 		_launch_wave()
 
 func _on_wave_started(wave_num: int) -> void:
+	_wave_launching = false
 	wave_label.text = "Wave %d/%d" % [wave_num, WaveManager.WAVES.size()]
 	wave_button.text = "Wave in progress..."
 
@@ -137,6 +139,10 @@ func _run_countdown(secs_left: int) -> void:
 	_run_countdown(secs_left - 1)
 
 func _launch_wave() -> void:
+	if _wave_launching:
+		return
+	_wave_launching = true
+	_wave_countdown_active = false
 	wave_button.disabled = true
 	wave_button.text = "Wave in progress..."
 	wave_manager.start_next_wave()
