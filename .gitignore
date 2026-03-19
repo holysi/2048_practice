@@ -3,3 +3,4 @@
 
 # 匯出輸出
 build/
+.worktrees/
