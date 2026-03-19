@@ -136,7 +136,7 @@ func _build_tower_palette() -> void:
 		var btn := Button.new()
 		btn.text = tower_names[i]
 		btn.size_flags_horizontal = SIZE_EXPAND_FILL
-		btn.pressed.connect(func(): _on_tower_type_selected(i))
+		btn.pressed.connect(_on_tower_type_selected.bind(i))
 		palette.add_child(btn)
 		palette.move_child(btn, i)  # insert before WaveButton
 
