@@ -32,6 +32,7 @@ signal wave_started(wave_number: int)
 signal wave_completed(wave_number: int)
 signal all_waves_completed
 signal enemy_reached_exit
+signal enemy_killed(gold_value: int)
 
 var enemy_scene: PackedScene
 var enemy_container: Node
@@ -73,8 +74,9 @@ func _spawn_enemy(type_int: int) -> void:
 	if waypoints.size() > 0:
 		e.global_position = waypoints[0]
 
-func _on_enemy_died(_gold: int) -> void:
+func _on_enemy_died(gold: int) -> void:
 	_enemies_alive = max(0, _enemies_alive - 1)
+	enemy_killed.emit(gold)
 	_check_wave_complete()
 
 func _on_enemy_reached_exit() -> void:

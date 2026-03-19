@@ -96,6 +96,7 @@ func _setup_wave_manager() -> void:
 	wave_manager.enemy_container = enemy_container
 	wave_manager.waypoints = _world_waypoints.duplicate()
 	wave_manager.enemy_reached_exit.connect(_on_enemy_reached_exit)
+	wave_manager.enemy_killed.connect(_on_enemy_killed)
 
 func _on_wave_button_pressed() -> void:
 	wave_button.disabled = true
@@ -184,3 +185,7 @@ func is_cell_placeable(cell: Vector2i) -> bool:
 	if cell.x < 0 or cell.x >= GRID_COLS or cell.y < 0 or cell.y >= GRID_ROWS:
 		return false
 	return not _blocked[cell.y][cell.x] and _grid[cell.y][cell.x] == null
+
+func _on_enemy_killed(gold_value: int) -> void:
+	GameManager.gold += gold_value
+	GameManager.gold_changed.emit(GameManager.gold)
