@@ -49,8 +49,10 @@ func _ready() -> void:
 	_init_grid()
 	_draw_path()
 	_setup_wave_manager()
-	GameManager.gold_changed.connect(_on_gold_changed)
-	GameManager.bomb_aoe_requested.connect(_on_bomb_aoe_requested)
+	if not GameManager.gold_changed.is_connected(_on_gold_changed):
+		GameManager.gold_changed.connect(_on_gold_changed)
+	if not GameManager.bomb_aoe_requested.is_connected(_on_bomb_aoe_requested):
+		GameManager.bomb_aoe_requested.connect(_on_bomb_aoe_requested)
 	wave_button.pressed.connect(_on_wave_button_pressed)
 	wave_manager.wave_started.connect(_on_wave_started)
 	wave_manager.wave_completed.connect(_on_wave_completed)
@@ -295,7 +297,7 @@ func _on_enemy_killed(gold_value: int) -> void:
 
 func _on_bomb_aoe_requested(_world_pos: Vector2) -> void:
 	# Explode at center of the TD map
-	var center := size / 2.0
+	var center := to_global(size / 2.0)
 	apply_aoe_damage(center, size.x * 0.4, 80)
 	_play_bomb_flash()
 
