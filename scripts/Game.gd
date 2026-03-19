@@ -289,6 +289,7 @@ func undo() -> bool:
 func restart() -> void:
 	history.clear()
 	score = 0
+	GameManager.reset()
 	elapsed_time = 0.0
 	_timer_running = true
 	_win_shown = false
@@ -344,6 +345,7 @@ func _try_move(direction: String) -> void:
 	var pre_board: Array = _copy_board(board)
 	if move(direction):
 		_update_display()
+		GameManager.report_score(score)
 		# --- animations + bomb award ---
 		var tone_played  := false
 		var bomb_earned  := false

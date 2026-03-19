@@ -22,6 +22,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 SaveData="*res://scripts/SaveData.gd"
+GameManager="*res://scripts/GameManager.gd"
 
 [rendering]
 
