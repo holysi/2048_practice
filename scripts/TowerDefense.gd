@@ -50,6 +50,7 @@ func _ready() -> void:
 	_draw_path()
 	_setup_wave_manager()
 	GameManager.gold_changed.connect(_on_gold_changed)
+	GameManager.bomb_aoe_requested.connect(_on_bomb_aoe_requested)
 	wave_button.pressed.connect(_on_wave_button_pressed)
 	wave_manager.wave_started.connect(_on_wave_started)
 	wave_manager.wave_completed.connect(_on_wave_completed)
@@ -291,3 +292,18 @@ func is_cell_placeable(cell: Vector2i) -> bool:
 
 func _on_enemy_killed(gold_value: int) -> void:
 	GameManager.earn_gold(gold_value)
+
+func _on_bomb_aoe_requested(_world_pos: Vector2) -> void:
+	# Explode at center of the TD map
+	var center := size / 2.0
+	apply_aoe_damage(center, size.x * 0.4, 80)
+	_play_bomb_flash()
+
+func _play_bomb_flash() -> void:
+	var flash := ColorRect.new()
+	flash.color = Color(1, 1, 1, 0.5)
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(flash)
+	var tween := create_tween()
+	tween.tween_property(flash, "modulate:a", 0.0, 0.4)
+	tween.tween_callback(flash.queue_free)

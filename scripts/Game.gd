@@ -225,6 +225,7 @@ func _use_bomb() -> void:
 	_play_bomb_animation()
 	_play_bomb_tone()
 	_update_display()
+	GameManager.request_bomb_aoe(Vector2.ZERO)
 
 func _play_bomb_animation() -> void:
 	# Scale-pulse the board container from its centre
