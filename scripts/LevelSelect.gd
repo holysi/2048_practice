@@ -33,7 +33,7 @@ func _on_level_pressed(index: int) -> void:
 
 func _on_start_pressed() -> void:
 	SaveData.current_level_index = _selected_index
-	get_tree().change_scene_to_file("res://scenes/Game.tscn")
+	get_tree().change_scene_to_file("res://scenes/HybridGame.tscn")
 
 func _show_leaderboard(index: int) -> void:
 	var level = SaveData.LEVELS[index]
