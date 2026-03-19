@@ -151,6 +151,24 @@ func _launch_wave() -> void:
 	wave_manager.start_next_wave()
 
 func _on_all_waves_completed() -> void:
+	var overlay := ColorRect.new()
+	overlay.color = Color(0.1, 0.3, 0.1, 0.8)
+	add_child(overlay)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+
+	var panel := VBoxContainer.new()
+	panel.alignment = BoxContainer.ALIGNMENT_CENTER
+	panel.custom_minimum_size = Vector2(200, 0)
+	overlay.add_child(panel)
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
+
+	var title := Label.new()
+	title.text = "Waves Cleared! 🎉"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	panel.add_child(title)
+
 	wave_label.text = "All Waves Done!"
 
 func _on_gold_changed(amount: int) -> void:
@@ -163,9 +181,49 @@ func _on_enemy_reached_exit() -> void:
 		_game_over()
 
 func _game_over() -> void:
-	# Phase 7 will add full game-over overlay
-	wave_button.text = "GAME OVER"
 	wave_button.disabled = true
+	var overlay := ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.75)
+	add_child(overlay)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+
+	var panel := VBoxContainer.new()
+	panel.alignment = BoxContainer.ALIGNMENT_CENTER
+	panel.custom_minimum_size = Vector2(200, 0)
+	overlay.add_child(panel)
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
+
+	var title := Label.new()
+	title.text = "Base Destroyed!"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	panel.add_child(title)
+
+	var retry_btn := Button.new()
+	retry_btn.text = "Try Again"
+	retry_btn.pressed.connect(_restart_td)
+	panel.add_child(retry_btn)
+
+func _restart_td() -> void:
+	lives = MAX_LIVES
+	lives_label.text = "Lives: %d" % lives
+	wave_button.disabled = false
+	wave_button.text = "Start Wave 1"
+	wave_manager.reset()
+	# Clear all enemies
+	for child in enemy_container.get_children():
+		child.queue_free()
+	# Clear all towers and reset grid
+	for child in tower_container.get_children():
+		child.queue_free()
+	_init_grid()
+	# Remove game-over overlay
+	for child in get_children():
+		if child is ColorRect and child.color == Color(0, 0, 0, 0.75):
+			child.queue_free()
+	_wave_countdown_active = false
+	_wave_launching = false
 
 func _build_tower_palette() -> void:
 	var palette := $UI/BottomBar
@@ -219,6 +277,11 @@ func _show_tower_info(tower: Tower) -> void:
 	stats_lbl.text = "DMG: %d  RNG: %d\nRate: %.1f/s" % [tower.damage, int(tower.range_px), tower.fire_rate]
 	vbox.add_child(stats_lbl)
 
+	var gold_lbl := Label.new()
+	gold_lbl.text = "💰 %d gold" % GameManager.gold
+	gold_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(gold_lbl)
+
 	if tower.upgrade_cost > 0:
 		var upg_btn := Button.new()
 		upg_btn.text = "Upgrade\n%d gold" % tower.upgrade_cost
@@ -229,6 +292,18 @@ func _show_tower_info(tower: Tower) -> void:
 		max_lbl.text = "MAX LEVEL"
 		max_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		vbox.add_child(max_lbl)
+
+	var sell_btn := Button.new()
+	var original_cost: int = TowerData.STATS[tower.tower_type][1]["cost"]
+	sell_btn.text = "Sell\n%dg" % (original_cost / 2)
+	sell_btn.pressed.connect(func():
+		GameManager.earn_gold(original_cost / 2)
+		_grid[tower.grid_cell.y][tower.grid_cell.x] = null
+		_blocked[tower.grid_cell.y][tower.grid_cell.x] = false
+		tower.queue_free()
+		_close_tower_info()
+	)
+	vbox.add_child(sell_btn)
 
 	var close_btn := Button.new()
 	close_btn.text = "Close"
