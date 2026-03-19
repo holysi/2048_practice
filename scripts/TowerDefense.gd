@@ -36,6 +36,8 @@ var _blocked: Array = []           # Array[Array] of bool — path cells
 
 var _selected_tower_type: int = 0  # default BASIC
 var _info_panel: PanelContainer = null
+var _wave_countdown_active: bool = false
+var _countdown_wave_num: int = 0
 
 func _ready() -> void:
 	# Wait for layout to resolve so size is valid
@@ -100,18 +102,44 @@ func _setup_wave_manager() -> void:
 	wave_manager.enemy_killed.connect(_on_enemy_killed)
 
 func _on_wave_button_pressed() -> void:
-	wave_button.disabled = true
-	wave_manager.start_next_wave()
+	if _wave_countdown_active:
+		# Skip countdown — launch immediately
+		_wave_countdown_active = false
+		_launch_wave()
+	else:
+		# First wave (no countdown)
+		_launch_wave()
 
 func _on_wave_started(wave_num: int) -> void:
 	wave_label.text = "Wave %d/%d" % [wave_num, WaveManager.WAVES.size()]
+	wave_button.text = "Wave in progress..."
 
 func _on_wave_completed(_wave_num: int) -> void:
-	if wave_manager.current_wave < WaveManager.WAVES.size():
-		wave_button.text = "Start Wave %d" % (wave_manager.current_wave + 1)
-		wave_button.disabled = false
-	else:
-		wave_label.text = "Victory!"
+	if wave_manager.current_wave >= WaveManager.WAVES.size():
+		_on_all_waves_completed()
+		return
+	_countdown_wave_num = wave_manager.current_wave + 1
+	_wave_countdown_active = true
+	wave_button.disabled = false
+	_run_countdown(3)
+
+func _run_countdown(secs_left: int) -> void:
+	if not _wave_countdown_active:
+		return
+	wave_button.text = "Wave %d (%ds)" % [_countdown_wave_num, secs_left]
+	if secs_left <= 0:
+		_wave_countdown_active = false
+		_launch_wave()
+		return
+	await get_tree().create_timer(1.0).timeout
+	if not is_instance_valid(self) or not _wave_countdown_active:
+		return
+	_run_countdown(secs_left - 1)
+
+func _launch_wave() -> void:
+	wave_button.disabled = true
+	wave_button.text = "Wave in progress..."
+	wave_manager.start_next_wave()
 
 func _on_all_waves_completed() -> void:
 	wave_label.text = "All Waves Done!"
