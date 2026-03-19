@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3 uid="uid://projectilescene2048td1"]
+
+[ext_resource type="Script" path="res://scripts/Projectile.gd" id="1_projscript"]
+
+[node name="Projectile" type="Area2D"]
+script = ExtResource("1_projscript")
+
+[node name="Body" type="ColorRect" parent="."]
+offset_left = -4.0
+offset_top = -4.0
+offset_right = 4.0
+offset_bottom = 4.0
+color = Color(1.0, 0.9, 0.2, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]

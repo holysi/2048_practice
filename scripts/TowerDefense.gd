@@ -31,6 +31,10 @@ var _blocked: Array = []           # Array[Array] of bool — path cells
 @onready var path_visual: Line2D = $PathVisual
 
 @export var enemy_scene: PackedScene
+@export var tower_scene: PackedScene
+@export var projectile_scene: PackedScene
+
+var _selected_tower_type: int = 0  # default BASIC
 
 func _ready() -> void:
 	# Wait for layout to resolve so size is valid
@@ -46,6 +50,8 @@ func _ready() -> void:
 	wave_manager.wave_started.connect(_on_wave_started)
 	wave_manager.wave_completed.connect(_on_wave_completed)
 	wave_manager.all_waves_completed.connect(_on_all_waves_completed)
+	# Connect tower palette buttons — added dynamically below
+	_build_tower_palette()
 
 func _build_world_waypoints() -> void:
 	_world_waypoints.clear()
@@ -121,6 +127,44 @@ func _game_over() -> void:
 	# Phase 7 will add full game-over overlay
 	wave_button.text = "GAME OVER"
 	wave_button.disabled = true
+
+func _build_tower_palette() -> void:
+	var palette := $UI/BottomBar
+	# Remove WaveButton temporarily — keep it but add tower buttons before it
+	var tower_names := ["⚔ Basic\n50g", "🎯 Sniper\n80g", "💥 Splash\n100g", "❄ Slow\n70g", "⚡ Laser\n120g"]
+	for i in tower_names.size():
+		var btn := Button.new()
+		btn.text = tower_names[i]
+		btn.size_flags_horizontal = SIZE_EXPAND_FILL
+		btn.pressed.connect(func(): _on_tower_type_selected(i))
+		palette.add_child(btn)
+		palette.move_child(btn, i)  # insert before WaveButton
+
+func _on_tower_type_selected(type_int: int) -> void:
+	_selected_tower_type = type_int
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		var local_pos := get_local_mouse_position()
+		var cell := world_to_cell(local_pos)
+		if is_cell_placeable(cell):
+			var cost: int = TowerData.STATS[_selected_tower_type][1]["cost"]
+			if GameManager.spend_gold(cost):
+				_place_tower(cell, _selected_tower_type)
+
+func _place_tower(cell: Vector2i, type_int: int) -> void:
+	if tower_scene == null:
+		return
+	var t: Tower = tower_scene.instantiate()
+	t.tower_type = type_int as Tower.TowerType
+	t.grid_cell = cell
+	t._td = self
+	t._projectile_scene = projectile_scene
+	var world_pos := cell_to_world(cell)
+	t.position = world_pos
+	tower_container.add_child(t)
+	_grid[cell.y][cell.x] = t
+	_blocked[cell.y][cell.x] = true  # occupied
 
 func apply_aoe_damage(center: Vector2, radius: float, damage: int) -> void:
 	for enemy in enemy_container.get_children():
