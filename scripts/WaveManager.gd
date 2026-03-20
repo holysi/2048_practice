@@ -27,6 +27,7 @@ const WAVES: Array = [
 
 var current_wave: int = 0
 var _enemies_alive: int = 0
+var _paused: bool = false
 
 signal wave_started(wave_number: int)
 signal wave_completed(wave_number: int)
@@ -56,6 +57,8 @@ func _spawn_wave(wave_data: Dictionary) -> void:
 
 	for group in wave_data["groups"]:
 		for i in group["count"]:
+			if _paused:
+				return   # abandon in-flight coroutine on pause
 			_spawn_enemy(group["type"])
 			if group["interval"] > 0.0:
 				await get_tree().create_timer(group["interval"]).timeout
@@ -91,3 +94,7 @@ func _check_wave_complete() -> void:
 func reset() -> void:
 	current_wave = 0
 	_enemies_alive = 0
+	_paused = false
+
+func set_paused(v: bool) -> void:
+	_paused = v
