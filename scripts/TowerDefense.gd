@@ -219,7 +219,7 @@ func _pause_all_enemies() -> void:
 func _stop_all_tower_timers() -> void:
 	for tower in tower_container.get_children():
 		if tower is Tower:
-			tower.get_node("AttackTimer").stop()
+			tower.attack_timer.stop()
 
 func _game_over() -> void:
 	_td_game_over = true
@@ -287,6 +287,7 @@ func _restart_td() -> void:
 	# Clear all towers and reset grid
 	for child in tower_container.get_children():
 		child.queue_free()
+	_slot_towers.clear()   # prevent stale freed-node refs on corner clicks after restart
 	_init_grid()
 	# Remove game-over overlay if present
 	var go_overlay := get_node_or_null("GameOverOverlay")
