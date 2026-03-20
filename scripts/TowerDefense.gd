@@ -1,19 +1,20 @@
 # scripts/TowerDefense.gd
 extends Control
 
-# Normalized waypoints (0..1) — converted to world coords after layout
+# Normalized waypoints (0..1) — enemies enter from RIGHT, exit LEFT (toward base)
 const WAYPOINTS_NORMALIZED: Array = [
-	Vector2(0.0, 0.3),
-	Vector2(0.3, 0.3),
-	Vector2(0.3, 0.7),
-	Vector2(0.7, 0.7),
-	Vector2(0.7, 0.3),
-	Vector2(1.0, 0.3),
+	Vector2(1.0, 0.25),
+	Vector2(0.7, 0.25),
+	Vector2(0.7, 0.65),
+	Vector2(0.3, 0.65),
+	Vector2(0.3, 0.25),
+	Vector2(0.0, 0.25),
 ]
 
-const GRID_COLS: int = 10
-const GRID_ROWS: int = 14
+const GRID_COLS: int = 64
+const GRID_ROWS: int = 64
 const MAX_LIVES: int = 20
+const UI_BAR_H: int = 32   # height of top and bottom info bars (px)
 
 var lives: int = MAX_LIVES
 var _world_waypoints: Array = []   # Array of Vector2, world coords
@@ -34,6 +35,9 @@ var _blocked: Array = []           # Array[Array] of bool — path cells
 @export var tower_scene: PackedScene
 @export var projectile_scene: PackedScene
 
+var cell_size: float = 1.0    # computed in _ready after layout
+var grid_offset: Vector2 = Vector2.ZERO   # offset from TowerDefense origin to grid top-left
+
 var _selected_tower_type: int = 0  # default BASIC
 var _info_panel: PanelContainer = null
 var _wave_countdown_active: bool = false
@@ -45,8 +49,9 @@ func _ready() -> void:
 	await get_tree().process_frame
 	if not is_instance_valid(self):
 		return
-	_build_world_waypoints()
-	_init_grid()
+	_compute_cell_size()        # 1. must run first — cell_size/grid_offset used by everything below
+	_build_world_waypoints()    # 2. uses cell_size + grid_offset
+	_init_grid()                # 3. calls _is_cell_on_path → uses cell_size + grid_offset
 	_draw_path()
 	_setup_wave_manager()
 	if not GameManager.gold_changed.is_connected(_on_gold_changed):
@@ -60,10 +65,21 @@ func _ready() -> void:
 	# Connect tower palette buttons — added dynamically below
 	_build_tower_palette()
 
+func _compute_cell_size() -> void:
+	var available_w: float = size.x
+	var available_h: float = size.y - 2.0 * UI_BAR_H
+	cell_size = min(available_w / GRID_COLS, available_h / GRID_ROWS)
+	var grid_w: float = cell_size * GRID_COLS
+	var grid_h: float = cell_size * GRID_ROWS
+	# grid_offset.y = UI_BAR_H: grid starts below top bar
+	# grid_offset.x: center horizontally if grid is narrower than panel
+	grid_offset = Vector2((size.x - grid_w) / 2.0, float(UI_BAR_H))
+
 func _build_world_waypoints() -> void:
 	_world_waypoints.clear()
+	var grid_size := Vector2(cell_size * GRID_COLS, cell_size * GRID_ROWS)
 	for npt in WAYPOINTS_NORMALIZED:
-		_world_waypoints.append(npt * size)
+		_world_waypoints.append(grid_offset + npt * grid_size)
 
 func _draw_path() -> void:
 	path_visual.clear_points()
@@ -83,25 +99,30 @@ func _init_grid() -> void:
 		_blocked.append(blocked_row)
 
 func _is_cell_on_path(row: int, col: int) -> bool:
-	var cell_size := size / Vector2(GRID_COLS, GRID_ROWS)
-	var cell_center := Vector2(col + 0.5, row + 0.5) * cell_size
+	var cell_center := grid_offset + Vector2(col + 0.5, row + 0.5) * cell_size
 	for i in range(_world_waypoints.size() - 1):
 		var a: Vector2 = _world_waypoints[i]
 		var b: Vector2 = _world_waypoints[i + 1]
-		if _dist_point_to_segment(cell_center, a, b) < cell_size.x * 0.6:
+		if _dist_point_to_segment(cell_center, a, b) < cell_size * 0.6:
 			return true
 	return false
 
 func _dist_point_to_segment(p: Vector2, a: Vector2, b: Vector2) -> float:
 	var ab := b - a
 	var ap := p - a
-	var t := clamp(ap.dot(ab) / ab.length_squared(), 0.0, 1.0)
+	var t: float = clamp(ap.dot(ab) / ab.length_squared(), 0.0, 1.0)
 	return p.distance_to(a + ab * t)
 
 func _setup_wave_manager() -> void:
 	wave_manager.enemy_scene = enemy_scene
 	wave_manager.enemy_container = enemy_container
-	wave_manager.waypoints = _world_waypoints.duplicate()
+	# Convert local waypoints → global so enemies (CharacterBody2D) spawn correctly.
+	# _world_waypoints are in TowerDefense local space; enemies use global_position.
+	var origin: Vector2 = get_global_rect().position
+	var global_waypoints: Array = []
+	for wp in _world_waypoints:
+		global_waypoints.append(wp + origin)
+	wave_manager.waypoints = global_waypoints
 	wave_manager.enemy_reached_exit.connect(_on_enemy_reached_exit)
 	wave_manager.enemy_killed.connect(_on_enemy_killed)
 
@@ -249,7 +270,7 @@ func _input(event: InputEvent) -> void:
 		var cell := world_to_cell(local_pos)
 		if cell.x < 0 or cell.x >= GRID_COLS or cell.y < 0 or cell.y >= GRID_ROWS:
 			return
-		var existing := _grid[cell.y][cell.x]
+		var existing = _grid[cell.y][cell.x]
 		if existing != null:
 			_show_tower_info(existing)
 		elif is_cell_placeable(cell):
@@ -356,12 +377,11 @@ func apply_aoe_damage(center: Vector2, radius: float, damage: int) -> void:
 			enemy.take_damage(damage)
 
 func cell_to_world(cell: Vector2i) -> Vector2:
-	var cell_size := size / Vector2(GRID_COLS, GRID_ROWS)
-	return Vector2(cell.x + 0.5, cell.y + 0.5) * cell_size
+	return grid_offset + Vector2(cell.x + 0.5, cell.y + 0.5) * cell_size
 
 func world_to_cell(world_pos: Vector2) -> Vector2i:
-	var cell_size := size / Vector2(GRID_COLS, GRID_ROWS)
-	return Vector2i(int(world_pos.x / cell_size.x), int(world_pos.y / cell_size.y))
+	var local := world_pos - grid_offset
+	return Vector2i(int(local.x / cell_size), int(local.y / cell_size))
 
 func is_cell_placeable(cell: Vector2i) -> bool:
 	if cell.x < 0 or cell.x >= GRID_COLS or cell.y < 0 or cell.y >= GRID_ROWS:
@@ -373,7 +393,7 @@ func _on_enemy_killed(gold_value: int) -> void:
 
 func _on_bomb_aoe_requested(_world_pos: Vector2) -> void:
 	# Explode at center of the TD map
-	var center := to_global(size / 2.0)
+	var center := get_global_rect().get_center()
 	apply_aoe_damage(center, size.x * 0.4, 80)
 	_play_bomb_flash()
 
