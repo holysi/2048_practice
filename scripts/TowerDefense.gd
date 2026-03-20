@@ -38,12 +38,14 @@ var _blocked: Array = []           # Array[Array] of bool — path cells
 var cell_size: float = 1.0    # computed in _ready after layout
 var grid_offset: Vector2 = Vector2.ZERO   # offset from TowerDefense origin to grid top-left
 
-var _selected_tower_type: int = 0  # default BASIC
 var _info_panel: PanelContainer = null
 var _wave_countdown_active: bool = false
 var _wave_launching: bool = false
 var _countdown_wave_num: int = 0
 var _td_game_over: bool = false
+var _corner_slots: Array[Vector2i] = []
+var _slot_towers: Dictionary = {}      # Vector2i → Tower
+var _type_select_panel: PanelContainer = null
 
 func _ready() -> void:
 	# Wait for layout to resolve so size is valid
@@ -63,8 +65,7 @@ func _ready() -> void:
 	wave_manager.wave_started.connect(_on_wave_started)
 	wave_manager.wave_completed.connect(_on_wave_completed)
 	wave_manager.all_waves_completed.connect(_on_all_waves_completed)
-	# Connect tower palette buttons — added dynamically below
-	_build_tower_palette()
+	_build_bottom_bar()
 
 func _compute_cell_size() -> void:
 	var available_w: float = size.x
@@ -81,6 +82,12 @@ func _build_world_waypoints() -> void:
 	var grid_size := Vector2(cell_size * GRID_COLS, cell_size * GRID_ROWS)
 	for npt in WAYPOINTS_NORMALIZED:
 		_world_waypoints.append(grid_offset + npt * grid_size)
+	# Corner slots = turning points (indices 1–4 of WAYPOINTS_NORMALIZED)
+	_corner_slots.clear()
+	_slot_towers.clear()
+	for i in range(1, 5):   # indices 1, 2, 3, 4
+		var corner_cell := world_to_cell(_world_waypoints[i])
+		_corner_slots.append(corner_cell)
 
 func _draw_path() -> void:
 	path_visual.clear_points()
@@ -288,20 +295,21 @@ func _restart_td() -> void:
 	_wave_countdown_active = false
 	_wave_launching = false
 
-func _build_tower_palette() -> void:
-	var palette := $UI/BottomBar
-	# Remove WaveButton temporarily — keep it but add tower buttons before it
-	var tower_names := ["⚔ Basic\n50g", "🎯 Sniper\n80g", "💥 Splash\n100g", "❄ Slow\n70g", "⚡ Laser\n120g"]
-	for i in tower_names.size():
-		var btn := Button.new()
-		btn.text = tower_names[i]
-		btn.size_flags_horizontal = SIZE_EXPAND_FILL
-		btn.pressed.connect(_on_tower_type_selected.bind(i))
-		palette.add_child(btn)
-		palette.move_child(btn, i)  # insert before WaveButton
-
-func _on_tower_type_selected(type_int: int) -> void:
-	_selected_tower_type = type_int
+func _build_bottom_bar() -> void:
+	# Tech Tree placeholder — future skill upgrades
+	var tech_btn := Button.new()
+	tech_btn.text = "🔬 Tech Tree"
+	tech_btn.size_flags_horizontal = SIZE_EXPAND_FILL
+	tech_btn.pressed.connect(func():
+		# Placeholder: show "Coming Soon" label briefly
+		tech_btn.text = "🔬 Coming Soon..."
+		await get_tree().create_timer(1.5).timeout
+		if is_instance_valid(tech_btn):
+			tech_btn.text = "🔬 Tech Tree"
+	)
+	var bottom_bar := $UI/BottomBar
+	bottom_bar.add_child(tech_btn)
+	bottom_bar.move_child(tech_btn, 0)   # place before WaveButton
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -311,14 +319,16 @@ func _input(event: InputEvent) -> void:
 		var cell := world_to_cell(local_pos)
 		if cell.x < 0 or cell.x >= GRID_COLS or cell.y < 0 or cell.y >= GRID_ROWS:
 			return
-		var existing = _grid[cell.y][cell.x]
-		if existing != null:
-			_show_tower_info(existing)
-		elif is_cell_placeable(cell):
+		if cell in _corner_slots:
+			if _slot_towers.get(cell) == null:
+				_close_tower_info()
+				_show_tower_type_selection(cell)
+			else:
+				_close_type_selection()
+				_show_tower_info(_slot_towers[cell])
+		else:
 			_close_tower_info()
-			var cost: int = TowerData.STATS[_selected_tower_type][1]["cost"]
-			if GameManager.spend_gold(cost):
-				_place_tower(cell, _selected_tower_type)
+			_close_type_selection()
 
 
 func _show_tower_info(tower: Tower) -> void:
@@ -361,8 +371,12 @@ func _show_tower_info(tower: Tower) -> void:
 	sell_btn.text = "Sell\n%dg" % (original_cost / 2)
 	sell_btn.pressed.connect(func():
 		GameManager.earn_gold(original_cost / 2)
-		_grid[tower.grid_cell.y][tower.grid_cell.x] = null
-		_blocked[tower.grid_cell.y][tower.grid_cell.x] = false
+		var sell_cell := tower.grid_cell
+		_grid[sell_cell.y][sell_cell.x] = null
+		# Corner cells are permanently PATH-blocked; do not clear _blocked for them
+		if not (sell_cell in _corner_slots):
+			_blocked[sell_cell.y][sell_cell.x] = false
+		_slot_towers.erase(sell_cell)
 		tower.queue_free()
 		_close_tower_info()
 	)
@@ -390,6 +404,66 @@ func _close_tower_info() -> void:
 	if is_instance_valid(_info_panel):
 		_info_panel.queue_free()
 	_info_panel = null
+
+
+func _show_tower_type_selection(cell: Vector2i) -> void:
+	_close_type_selection()
+	_type_select_panel = PanelContainer.new()
+	_type_select_panel.custom_minimum_size = Vector2(150, 0)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 4)
+	_type_select_panel.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "⚔ 選擇塔類型"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var tower_defs := [
+		["× Basic",   Tower.TowerType.BASIC],
+		["🎯 Sniper",  Tower.TowerType.SNIPER],
+		["💥 Splash", Tower.TowerType.SPLASH],
+		["❄ Slow",    Tower.TowerType.SLOW],
+		["⚡ Laser",  Tower.TowerType.LASER],
+	]
+	for td in tower_defs:
+		var cost: int = TowerData.STATS[td[1]][1]["cost"]
+		var btn := Button.new()
+		btn.text = "%s  %dg" % [td[0], cost]
+		btn.pressed.connect(func(): _place_tower_at_slot(cell, td[1]))
+		vbox.add_child(btn)
+
+	var cancel_btn := Button.new()
+	cancel_btn.text = "✕ 取消"
+	cancel_btn.pressed.connect(_close_type_selection)
+	vbox.add_child(cancel_btn)
+
+	# Position near click, clamped next frame
+	var world_pos := cell_to_world(cell)
+	_type_select_panel.position = world_pos + Vector2(10, -60)
+	add_child(_type_select_panel)
+	await get_tree().process_frame
+	if not is_instance_valid(_type_select_panel):
+		return
+	_type_select_panel.position.x = clamp(_type_select_panel.position.x, 0.0, size.x - _type_select_panel.size.x)
+	_type_select_panel.position.y = clamp(_type_select_panel.position.y, 0.0, size.y - _type_select_panel.size.y)
+
+
+func _close_type_selection() -> void:
+	if is_instance_valid(_type_select_panel):
+		_type_select_panel.queue_free()
+	_type_select_panel = null
+
+
+func _place_tower_at_slot(cell: Vector2i, type_val: Tower.TowerType) -> void:
+	var cost: int = TowerData.STATS[type_val][1]["cost"]
+	if not GameManager.spend_gold(cost):
+		_close_type_selection()
+		return
+	_close_type_selection()
+	_place_tower(cell, type_val as int)
+	_slot_towers[cell] = _grid[cell.y][cell.x]
 
 
 func _upgrade_tower(tower: Tower) -> void:
