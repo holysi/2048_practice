@@ -88,6 +88,21 @@ func _build_world_waypoints() -> void:
 	for i in range(1, 5):   # indices 1, 2, 3, 4
 		var corner_cell := world_to_cell(_world_waypoints[i])
 		_corner_slots.append(corner_cell)
+	queue_redraw()   # paint slot indicators
+
+func _draw() -> void:
+	# Draw visible markers for each corner slot so players can see where to click.
+	# Empty slot = blue dashed ring.  Occupied slot = small gold diamond.
+	var radius: float = cell_size * 1.8   # slightly larger than one cell
+	for slot_cell in _corner_slots:
+		var center := cell_to_world(slot_cell)
+		if _slot_towers.get(slot_cell) == null:
+			# Empty: two concentric arcs give a "dashed" ring effect
+			draw_arc(center, radius, 0.0, TAU, 24, Color(0.29, 0.60, 1.0, 0.85), 1.5)
+			draw_arc(center, radius * 0.55, 0.0, TAU, 16, Color(0.29, 0.60, 1.0, 0.45), 1.0)
+		else:
+			# Occupied: filled gold circle so players can still identify the slot
+			draw_circle(center, radius * 0.5, Color(1.0, 0.85, 0.2, 0.6))
 
 func _draw_path() -> void:
 	path_visual.clear_points()
@@ -380,6 +395,7 @@ func _show_tower_info(tower: Tower) -> void:
 		_slot_towers.erase(sell_cell)
 		tower.queue_free()
 		_close_tower_info()
+		queue_redraw()   # update slot indicator: occupied → empty
 	)
 	vbox.add_child(sell_btn)
 
@@ -465,6 +481,7 @@ func _place_tower_at_slot(cell: Vector2i, type_val: Tower.TowerType) -> void:
 	_close_type_selection()
 	_place_tower(cell, type_val as int)
 	_slot_towers[cell] = _grid[cell.y][cell.x]
+	queue_redraw()   # update slot indicator: empty → occupied
 
 
 func _upgrade_tower(tower: Tower) -> void:

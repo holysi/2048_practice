@@ -173,7 +173,9 @@ func _create_tile_nodes() -> void:
 		tile_nodes.append(row_nodes)
 
 func _update_display() -> void:
-	var board_rect: Rect2 = board_container.get_global_rect()
+	# Use CellGrid (the actual 1:1 square content) not BoardContainer (which includes
+	# AspectRatioContainer padding), so tile positions match the gray background cells.
+	var board_rect: Rect2 = $BoardContainer/CellGrid.get_global_rect()
 	var cell_size: Vector2 = board_rect.size / BOARD_SIZE
 	for row in BOARD_SIZE:
 		for col in BOARD_SIZE:
