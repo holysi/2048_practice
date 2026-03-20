@@ -43,6 +43,7 @@ var _info_panel: PanelContainer = null
 var _wave_countdown_active: bool = false
 var _wave_launching: bool = false
 var _countdown_wave_num: int = 0
+var _td_game_over: bool = false
 
 func _ready() -> void:
 	# Wait for layout to resolve so size is valid
@@ -196,13 +197,30 @@ func _on_gold_changed(amount: int) -> void:
 	gold_label.text = "Gold: %d" % amount
 
 func _on_enemy_reached_exit() -> void:
+	if _td_game_over:   # prevent double-trigger from simultaneous exits
+		return
 	lives -= 1
 	lives_label.text = "Lives: %d" % lives
 	if lives <= 0:
 		_game_over()
 
+func _pause_all_enemies() -> void:
+	for e in enemy_container.get_children():
+		if e is Enemy:
+			e.set_physics_process(false)
+
+func _stop_all_tower_timers() -> void:
+	for tower in tower_container.get_children():
+		if tower is Tower:
+			tower.get_node("AttackTimer").stop()
+
 func _game_over() -> void:
+	_td_game_over = true
 	wave_button.disabled = true
+	_pause_all_enemies()
+	_stop_all_tower_timers()
+	wave_manager.set_paused(true)
+
 	var overlay := ColorRect.new()
 	overlay.name = "GameOverOverlay"
 	overlay.color = Color(0, 0, 0, 0.75)
@@ -211,23 +229,46 @@ func _game_over() -> void:
 
 	var panel := VBoxContainer.new()
 	panel.alignment = BoxContainer.ALIGNMENT_CENTER
-	panel.custom_minimum_size = Vector2(200, 0)
+	panel.custom_minimum_size = Vector2(220, 0)
 	overlay.add_child(panel)
 	panel.set_anchors_preset(Control.PRESET_CENTER)
 	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
 
 	var title := Label.new()
-	title.text = "Base Destroyed!"
+	title.text = "💀 基地淪陷！"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	panel.add_child(title)
 
+	var sub := Label.new()
+	sub.text = "所有敵人暫停移動"
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	panel.add_child(sub)
+
+	# Bomb button — only shown when player has bombs
+	if GameManager.bomb_count > 0:
+		var bomb_btn := Button.new()
+		bomb_btn.name = "BombBtn"
+		bomb_btn.text = "💣 投放炸彈 (×%d)" % GameManager.bomb_count
+		bomb_btn.pressed.connect(func():
+			_on_bomb_aoe_requested(Vector2.ZERO)
+			# Refresh or hide button after use
+			if GameManager.bomb_count <= 0:
+				bomb_btn.queue_free()
+			else:
+				bomb_btn.text = "💣 投放炸彈 (×%d)" % GameManager.bomb_count
+		)
+		panel.add_child(bomb_btn)
+
 	var retry_btn := Button.new()
-	retry_btn.text = "Try Again"
+	retry_btn.text = "↺ 重新開始"
 	retry_btn.pressed.connect(_restart_td)
 	panel.add_child(retry_btn)
 
 func _restart_td() -> void:
+	_td_game_over = false
+	wave_manager.set_paused(false)
+	GameManager.reset()   # restores gold to STARTING_GOLD, resets bomb_count mirror
 	lives = MAX_LIVES
 	lives_label.text = "Lives: %d" % lives
 	wave_button.disabled = false
@@ -240,7 +281,7 @@ func _restart_td() -> void:
 	for child in tower_container.get_children():
 		child.queue_free()
 	_init_grid()
-	# Remove game-over overlay
+	# Remove game-over overlay if present
 	var go_overlay := get_node_or_null("GameOverOverlay")
 	if go_overlay:
 		go_overlay.queue_free()
