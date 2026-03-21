@@ -1,4 +1,5 @@
 # scripts/TowerData.gd
+class_name TowerData
 # Tower stats table — keyed by [TowerType][level]
 # cost = gold to place, upgrade_cost = gold to upgrade to next level (0 = max level)
 

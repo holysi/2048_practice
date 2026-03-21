@@ -65,7 +65,7 @@ func _physics_process(delta: float) -> void:
 		path_progress = float(_waypoint_index) / float(_waypoints.size())
 
 func take_damage(amount: int) -> void:
-	var actual := max(1, amount - armor)
+	var actual : float= max(1, amount - armor)
 	hp -= actual
 	if hp_bar:
 		hp_bar.value = float(hp) / float(max_hp) * 100.0

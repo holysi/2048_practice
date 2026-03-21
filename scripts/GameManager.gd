@@ -6,9 +6,15 @@ signal bomb_aoe_requested(world_position: Vector2)
 
 const GOLD_PER_MILESTONE: int = 20
 const SCORE_MILESTONE: int = 200
+const STARTING_GOLD: int = 100
 
-var gold: int = 0
+var gold: int = STARTING_GOLD
 var _last_milestone_score: int = 0
+
+var _bomb_count: int = 0          # backing variable — synced from Game.gd
+var bomb_count: int:
+	get: return _bomb_count
+	set(v): _bomb_count = v
 
 ## Called by Game.gd after every successful move.
 func report_score(new_score: int) -> void:
@@ -35,8 +41,9 @@ func earn_gold(amount: int) -> void:
 func request_bomb_aoe(world_pos: Vector2) -> void:
 	bomb_aoe_requested.emit(world_pos)
 
-## Called on game restart.
+## Called on TD restart — restores starting gold and clears milestone counter.
 func reset() -> void:
-	gold = 0
+	gold = STARTING_GOLD
 	_last_milestone_score = 0
+	_bomb_count = 0
 	gold_changed.emit(gold)

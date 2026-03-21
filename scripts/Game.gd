@@ -71,7 +71,7 @@ func spawn_tile() -> void:
 	var cell: Vector2i = empty_cells[randi() % empty_cells.size()]
 	board[cell.x][cell.y] = _pick_spawn_value()
 	_last_spawn = cell
-dd
+
 func _pick_spawn_value() -> int:
 	var level_data: Dictionary = SaveData.LEVELS[level_index]
 	var pool: Array    = level_data.get("spawn_pool",    [2, 4])
@@ -173,7 +173,9 @@ func _create_tile_nodes() -> void:
 		tile_nodes.append(row_nodes)
 
 func _update_display() -> void:
-	var board_rect: Rect2 = board_container.get_global_rect()
+	# Use CellGrid (the actual 1:1 square content) not BoardContainer (which includes
+	# AspectRatioContainer padding), so tile positions match the gray background cells.
+	var board_rect: Rect2 = $BoardContainer/CellGrid.get_global_rect()
 	var cell_size: Vector2 = board_rect.size / BOARD_SIZE
 	for row in BOARD_SIZE:
 		for col in BOARD_SIZE:
@@ -187,6 +189,7 @@ func _update_display() -> void:
 func _update_bomb_ui() -> void:
 	bomb_button.text = "💣 ×%d" % bomb_count
 	bomb_button.disabled = (bomb_count == 0 or _win_shown or is_game_over())
+	GameManager.bomb_count = bomb_count   # keep TowerDefense informed
 
 func _on_bomb_pressed() -> void:
 	_use_bomb()
@@ -195,6 +198,7 @@ func _use_bomb() -> void:
 	if bomb_count == 0 or _win_shown:
 		return
 	bomb_count -= 1
+	GameManager.bomb_count = bomb_count   # explicit sync before AOE
 	_update_bomb_ui()
 
 	# Collect all non-zero positions and values
